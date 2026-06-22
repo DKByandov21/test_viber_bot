@@ -8,7 +8,7 @@ INFOBIP_API_KEY = os.environ.get("INFOBIP_API_KEY")
 INFOBIP_BASE_URL = os.environ.get("INFOBIP_BASE_URL")
 
 def send_viber_bm_message(to, text):
-    url = f"https://{INFOBIP_BASE_URL}/viber/2/messages"
+    url = f"https://{INFOBIP_BASE_URL}/messages-api/1/messages"
     headers = {
         "Authorization": f"App {INFOBIP_API_KEY}",
         "Content-Type": "application/json"
@@ -16,9 +16,15 @@ def send_viber_bm_message(to, text):
     payload = {
         "messages": [
             {
+                "channel": "VIBER_BM",
                 "sender": "TCP",
                 "destinations": [{"to": to}],
-                "content": {"text": text}
+                "content": {
+                    "body": {
+                        "text": text,
+                        "type": "TEXT"
+                    }
+                }
             }
         ]
     }
