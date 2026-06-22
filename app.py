@@ -34,24 +34,34 @@ def ask_groq(user_message):
     return data["choices"][0]["message"]["content"]
 
 
-def send_viber_bm_message(to, text):
+REPLY_BUTTONS = [
+    {"type": "REPLY", "text": "Друг въпрос", "postbackData": "ANOTHER_QUESTION"},
+    {"type": "REPLY", "text": "Край", "postbackData": "END_CHAT"}
+]
+
+
+def send_viber_bm_message(to, text, buttons=None):
     url = f"https://{INFOBIP_BASE_URL}/messages-api/1/messages"
     headers = {
         "Authorization": f"App {INFOBIP_API_KEY}",
         "Content-Type": "application/json"
     }
+    content = {
+        "body": {
+            "text": text,
+            "type": "TEXT"
+        }
+    }
+    if buttons:
+        content["buttons"] = buttons
+
     payload = {
         "messages": [
             {
                 "channel": "VIBER_BM",
                 "sender": "TCP",
                 "destinations": [{"to": to}],
-                "content": {
-                    "body": {
-                        "text": text,
-                        "type": "TEXT"
-                    }
-                }
+                "content": content
             }
         ]
     }
@@ -60,6 +70,39 @@ def send_viber_bm_message(to, text):
     print(f"Viber status: {response.status_code}")
     print(f"Viber response: {response.text}")
     return response.status_code
+
+
+def send_template_notification(to, template_name, language, placeholders=None):
+    url = f"https://{INFOBIP_BASE_URL}/messages-api/1/messages"
+    headers = {
+        "Authorization": f"App {INFOBIP_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    body = {"type": "TEXT"}
+    if placeholders:
+        body.update(placeholders)
+
+    payload = {
+        "messages": [
+            {
+                "channel": "VIBER_BM",
+                "sender": "TCP",
+                "destinations": [{"to": to}],
+                "template": {
+                    "templateName": template_name,
+                    "language": language
+                },
+                "content": {
+                    "body": body
+                }
+            }
+        ]
+    }
+    print(f"Sending template '{template_name}' to: {to}")
+    response = requests.post(url, headers=headers, json=payload)
+    print(f"Viber status: {response.status_code}")
+    print(f"Viber response: {response.text}")
+    return response.status_code, response.text
 
 
 @app.route("/webhook", methods=["POST"])
@@ -75,7 +118,7 @@ def webhook():
             print(f"From: {sender}, Text: {text}")
             if sender and text:
                 ai_reply = ask_groq(text)
-                send_viber_bm_message(sender, ai_reply)
+                send_viber_bm_message(sender, ai_reply, buttons=REPLY_BUTTONS)
 
     except Exception as e:
         print(f"Error: {e}")
@@ -83,6 +126,25 @@ def webhook():
         traceback.print_exc()
 
     return jsonify({"status": "ok"}), 200
+
+
+@app.route("/notify", methods=["POST"])
+def notify():
+    data = request.json or {}
+    to = data.get("to")
+    placeholders = data.get("placeholders")
+
+    if not to:
+        return jsonify({"status": "error", "message": "'to' is required"}), 400
+
+    status, response_text = send_template_notification(
+        to=to,
+        template_name="euromaster",
+        language="bg",
+        placeholders=placeholders
+    )
+
+    return jsonify({"status": "sent", "infobip_status": status, "infobip_response": response_text}), 200
 
 
 @app.route("/", methods=["GET"])
