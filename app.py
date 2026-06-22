@@ -26,7 +26,10 @@ def ask_groq(user_message):
         ],
         "max_tokens": 500
     }
+    print(f"Calling Groq with model: {GROQ_MODEL}")
     response = requests.post(url, headers=headers, json=payload)
+    print(f"Groq status: {response.status_code}")
+    print(f"Groq response: {response.text}")
     data = response.json()
     return data["choices"][0]["message"]["content"]
 
@@ -47,7 +50,10 @@ def send_viber_message(to, text):
             }
         ]
     }
+    print(f"Sending to Viber: {to}")
     response = requests.post(url, headers=headers, json=payload)
+    print(f"Viber send status: {response.status_code}")
+    print(f"Viber send response: {response.text}")
     return response.status_code
 
 
@@ -63,11 +69,15 @@ def webhook():
             text = msg.get("message", {}).get("text", "")
 
             if sender and text:
+                print(f"Processing message from {sender}: {text}")
                 ai_reply = ask_groq(text)
+                print(f"AI reply: {ai_reply}")
                 send_viber_message(sender, ai_reply)
 
     except Exception as e:
-        print("Error:", e)
+        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
 
     return jsonify({"status": "ok"}), 200
 
