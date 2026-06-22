@@ -16,10 +16,9 @@ def send_viber_bm_message(to, text):
     payload = {
         "messages": [
             {
-                "channel": "VIBER",
-                "sender": {"type": "VIBER_BM", "sender": "TCP"},
+                "sender": "TCP",
                 "destinations": [{"to": to}],
-                "content": {"body": {"type": "TEXT", "text": text}}
+                "content": {"text": text}
             }
         ]
     }
