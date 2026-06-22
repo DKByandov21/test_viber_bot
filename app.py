@@ -34,7 +34,32 @@ def ask_groq(user_message):
     return data["choices"][0]["message"]["content"]
 
 
-def send_viber_message(to, text):
+def send_viber_bm_message(to, text):
+    """Send message via Viber BM (TCP sender)"""
+    url = f"https://{INFOBIP_BASE_URL}/viber/2/messages"
+    headers = {
+        "Authorization": f"App {INFOBIP_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "messages": [
+            {
+                "channel": "VIBER",
+                "sender": {"type": "VIBER_BM", "sender": "TCP"},
+                "destinations": [{"to": to}],
+                "content": {"body": {"type": "TEXT", "text": text}}
+            }
+        ]
+    }
+    print(f"Sending VBM to: {to}")
+    response = requests.post(url, headers=headers, json=payload)
+    print(f"Viber BM send status: {response.status_code}")
+    print(f"Viber BM send response: {response.text}")
+    return response.status_code
+
+
+def send_viber_bot_message(to, text):
+    """Send message via Viber Bot"""
     url = f"https://{INFOBIP_BASE_URL}/viber/2/messages"
     headers = {
         "Authorization": f"App {INFOBIP_API_KEY}",
@@ -50,11 +75,39 @@ def send_viber_message(to, text):
             }
         ]
     }
-    print(f"Sending to Viber: {to}")
+    print(f"Sending Bot message to: {to}")
     response = requests.post(url, headers=headers, json=payload)
-    print(f"Viber send status: {response.status_code}")
-    print(f"Viber send response: {response.text}")
+    print(f"Viber Bot send status: {response.status_code}")
+    print(f"Viber Bot send response: {response.text}")
     return response.status_code
+
+
+def parse_message(data):
+    """Parse both VBM and Viber Bot message formats"""
+    results = data.get("results", [])
+    messages = []
+
+    for msg in results:
+        sender = None
+        text = None
+        msg_type = None
+
+        # Viber Bot format (MO_MESSAGES_API_JSON)
+        if "from" in msg and "message" in msg:
+            sender = msg.get("from")
+            text = msg.get("message", {}).get("text", "")
+            msg_type = "bot"
+
+        # VBM format (MO_OTT_MSISDN)
+        elif "from" in msg:
+            sender = msg.get("from")
+            text = msg.get("text", "") or msg.get("message", {}).get("text", "")
+            msg_type = "vbm"
+
+        if sender and text:
+            messages.append({"sender": sender, "text": text, "type": msg_type})
+
+    return messages
 
 
 @app.route("/webhook", methods=["POST"])
@@ -63,16 +116,21 @@ def webhook():
     print("Incoming:", data)
 
     try:
-        results = data.get("results", [])
-        for msg in results:
-            sender = msg.get("from")
-            text = msg.get("message", {}).get("text", "")
+        messages = parse_message(data)
 
-            if sender and text:
-                print(f"Processing message from {sender}: {text}")
-                ai_reply = ask_groq(text)
-                print(f"AI reply: {ai_reply}")
-                send_viber_message(sender, ai_reply)
+        for msg in messages:
+            sender = msg["sender"]
+            text = msg["text"]
+            msg_type = msg["type"]
+
+            print(f"Processing [{msg_type}] from {sender}: {text}")
+            ai_reply = ask_groq(text)
+            print(f"AI reply: {ai_reply}")
+
+            if msg_type == "vbm":
+                send_viber_bm_message(sender, ai_reply)
+            else:
+                send_viber_bot_message(sender, ai_reply)
 
     except Exception as e:
         print(f"Error: {e}")
