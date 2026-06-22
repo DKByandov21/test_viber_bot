@@ -6,6 +6,33 @@ app = Flask(__name__)
 
 INFOBIP_API_KEY = os.environ.get("INFOBIP_API_KEY")
 INFOBIP_BASE_URL = os.environ.get("INFOBIP_BASE_URL")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+
+SYSTEM_PROMPT = """Ти си полезен асистент. Отговаряй кратко и ясно на български език."""
+
+
+def ask_groq(user_message):
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": GROQ_MODEL,
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_message}
+        ],
+        "max_tokens": 500
+    }
+    print(f"Calling Groq with model: {GROQ_MODEL}")
+    response = requests.post(url, headers=headers, json=payload)
+    print(f"Groq status: {response.status_code}")
+    print(f"Groq response: {response.text}")
+    data = response.json()
+    return data["choices"][0]["message"]["content"]
+
 
 def send_viber_bm_message(to, text):
     url = f"https://{INFOBIP_BASE_URL}/messages-api/1/messages"
@@ -47,7 +74,8 @@ def webhook():
             text = msg.get("message", {}).get("text", "")
             print(f"From: {sender}, Text: {text}")
             if sender and text:
-                send_viber_bm_message(sender, "Здравей! Ботът работи! 🤖")
+                ai_reply = ask_groq(text)
+                send_viber_bm_message(sender, ai_reply)
 
     except Exception as e:
         print(f"Error: {e}")
