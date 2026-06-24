@@ -9,7 +9,9 @@ INFOBIP_BASE_URL = os.environ.get("INFOBIP_BASE_URL")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 
-SYSTEM_PROMPT = """Ти си полезен асистент. Отговаряй кратко и ясно на български език."""
+SYSTEM_PROMPT = """Ти си полезен асистент. Отговаряй кратко и ясно на български език, до 3-4 изречения. Не използвай markdown форматиране (без **, #, -, списъци) - само обикновен текст."""
+
+VIBER_TEXT_LIMIT = 1000
 
 
 def ask_groq(user_message):
@@ -24,14 +26,15 @@ def ask_groq(user_message):
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_message}
         ],
-        "max_tokens": 500
+        "max_tokens": 250
     }
     print(f"Calling Groq with model: {GROQ_MODEL}")
     response = requests.post(url, headers=headers, json=payload)
     print(f"Groq status: {response.status_code}")
     print(f"Groq response: {response.text}")
     data = response.json()
-    return data["choices"][0]["message"]["content"]
+    reply = data["choices"][0]["message"]["content"]
+    return reply[:VIBER_TEXT_LIMIT]
 
 
 REPLY_BUTTONS = [
