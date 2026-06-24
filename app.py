@@ -43,7 +43,10 @@ REPLY_BUTTONS = [
 ]
 
 
-def send_viber_bm_message(to, text, buttons=None):
+VIBER_BOT_SENDER = "pa:6060271498432636599"
+
+
+def send_viber_bot_message(to, text, buttons=None):
     url = f"https://{INFOBIP_BASE_URL}/messages-api/1/messages"
     headers = {
         "Authorization": f"App {INFOBIP_API_KEY}",
@@ -61,8 +64,8 @@ def send_viber_bm_message(to, text, buttons=None):
     payload = {
         "messages": [
             {
-                "channel": "VIBER_BM",
-                "sender": "TCP",
+                "channel": "VIBER_BOT",
+                "sender": VIBER_BOT_SENDER,
                 "destinations": [{"to": to}],
                 "content": content
             }
@@ -121,7 +124,7 @@ def webhook():
             print(f"From: {sender}, Text: {text}")
             if sender and text:
                 ai_reply = ask_groq(text)
-                send_viber_bm_message(sender, ai_reply, buttons=REPLY_BUTTONS)
+                send_viber_bot_message(sender, ai_reply, buttons=REPLY_BUTTONS)
 
     except Exception as e:
         print(f"Error: {e}")
