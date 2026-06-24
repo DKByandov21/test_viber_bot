@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 import requests
 import os
+import re
+import glob
 
 app = Flask(__name__)
 
@@ -9,9 +11,45 @@ INFOBIP_BASE_URL = os.environ.get("INFOBIP_BASE_URL")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 
-SYSTEM_PROMPT = """Ти си полезен асистент. Отговаряй кратко и ясно на български език, до 3-4 изречения. Не използвай markdown форматиране (без **, #, -, списъци) - само обикновен текст."""
+SYSTEM_PROMPT = """Ти си помощник, специализиран в Infobip API и услуги (SMS, Viber, WhatsApp, Email, 2FA, Messages API).
+Отговаряй кратко и ясно на български език, до 3-4 изречения. Не използвай markdown форматиране (без **, #, -, списъци) - само обикновен текст.
+Ако ти е предоставен контекст от документация по-долу, базирай отговора си на него. Ако контекстът не съдържа отговора, кажи че не си сигурен."""
 
 VIBER_TEXT_LIMIT = 1000
+KNOWLEDGE_DIR = os.path.join(os.path.dirname(__file__), "knowledge")
+
+
+def load_knowledge_chunks():
+    chunks = []
+    for path in glob.glob(os.path.join(KNOWLEDGE_DIR, "*.md")):
+        with open(path, "r", encoding="utf-8") as f:
+            content = f.read()
+        sections = re.split(r"\n(?=#{1,3} )", content)
+        for section in sections:
+            section = section.strip()
+            if section:
+                chunks.append(section)
+    return chunks
+
+
+KNOWLEDGE_CHUNKS = load_knowledge_chunks()
+print(f"Loaded {len(KNOWLEDGE_CHUNKS)} knowledge chunks")
+
+
+def find_relevant_chunks(query, top_n=3):
+    query_words = set(re.findall(r"\w+", query.lower()))
+    if not query_words:
+        return []
+
+    scored = []
+    for chunk in KNOWLEDGE_CHUNKS:
+        chunk_words = set(re.findall(r"\w+", chunk.lower()))
+        overlap = len(query_words & chunk_words)
+        if overlap > 0:
+            scored.append((overlap, chunk))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [chunk for _, chunk in scored[:top_n]]
 
 
 def ask_groq(user_message):
@@ -20,15 +58,23 @@ def ask_groq(user_message):
         "Authorization": f"Bearer {GROQ_API_KEY}",
         "Content-Type": "application/json"
     }
+
+    relevant_chunks = find_relevant_chunks(user_message)
+    if relevant_chunks:
+        context = "\n\n---\n\n".join(relevant_chunks)
+        user_content = f"Контекст от Infobip документация:\n{context}\n\nВъпрос: {user_message}"
+    else:
+        user_content = user_message
+
     payload = {
         "model": GROQ_MODEL,
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_message}
+            {"role": "user", "content": user_content}
         ],
         "max_tokens": 250
     }
-    print(f"Calling Groq with model: {GROQ_MODEL}")
+    print(f"Calling Groq with model: {GROQ_MODEL}, with {len(relevant_chunks)} knowledge chunks")
     response = requests.post(url, headers=headers, json=payload)
     print(f"Groq status: {response.status_code}")
     print(f"Groq response: {response.text}")
