@@ -119,8 +119,12 @@ def webhook():
     try:
         results = data.get("results", [])
         for msg in results:
-            sender = msg.get("from")
-            text = msg.get("message", {}).get("text", "")
+            sender = msg.get("sender") or msg.get("from")
+            content = msg.get("content")
+            if isinstance(content, list) and content:
+                text = content[0].get("text", "")
+            else:
+                text = msg.get("message", {}).get("text", "")
             print(f"From: {sender}, Text: {text}")
             if sender and text:
                 ai_reply = ask_groq(text)
