@@ -18,6 +18,9 @@ SYSTEM_PROMPT = """Ти си помощник, специализиран в Inf
 VIBER_TEXT_LIMIT = 1000
 KNOWLEDGE_DIR = os.path.join(os.path.dirname(__file__), "knowledge")
 
+CONVERSATIONS = {}
+MAX_HISTORY_MESSAGES = 10
+
 
 def load_knowledge_chunks():
     chunks = []
@@ -52,7 +55,7 @@ def find_relevant_chunks(query, top_n=3):
     return [chunk for _, chunk in scored[:top_n]]
 
 
-def ask_groq(user_message):
+def ask_groq(sender, user_message):
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -66,25 +69,33 @@ def ask_groq(user_message):
     else:
         user_content = user_message
 
+    history = CONVERSATIONS.get(sender, [])
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history + [{"role": "user", "content": user_content}]
+
     payload = {
         "model": GROQ_MODEL,
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_content}
-        ],
+        "messages": messages,
         "max_tokens": 250
     }
-    print(f"Calling Groq with model: {GROQ_MODEL}, with {len(relevant_chunks)} knowledge chunks")
+    print(f"Calling Groq with model: {GROQ_MODEL}, with {len(relevant_chunks)} knowledge chunks, {len(history)} history messages")
     response = requests.post(url, headers=headers, json=payload)
     print(f"Groq status: {response.status_code}")
     print(f"Groq response: {response.text}")
     data = response.json()
     reply = data["choices"][0]["message"]["content"]
-    return reply[:VIBER_TEXT_LIMIT]
+    reply = reply[:VIBER_TEXT_LIMIT]
+
+    history.append({"role": "user", "content": user_message})
+    history.append({"role": "assistant", "content": reply})
+    CONVERSATIONS[sender] = history[-MAX_HISTORY_MESSAGES:]
+
+    return reply
 
 
 REPLY_BUTTONS = [
     {"type": "REPLY", "text": "Друг въпрос", "postbackData": "ANOTHER_QUESTION"},
+    {"type": "REPLY", "text": "Свържи се с агент", "postbackData": "CONTACT_AGENT"},
+    {"type": "OPEN_URL", "text": "Сайт на Infobip", "url": "https://www.infobip.com"},
     {"type": "REPLY", "text": "Край", "postbackData": "END_CHAT"}
 ]
 
@@ -173,7 +184,7 @@ def webhook():
                 text = msg.get("message", {}).get("text", "")
             print(f"From: {sender}, Text: {text}")
             if sender and text:
-                ai_reply = ask_groq(text)
+                ai_reply = ask_groq(sender, text)
                 send_viber_bot_message(sender, ai_reply, buttons=REPLY_BUTTONS)
 
     except Exception as e:
