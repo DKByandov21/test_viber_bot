@@ -5,7 +5,11 @@ INFOBIP_BASE_URL = os.environ.get("INFOBIP_BASE_URL")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 APP_API_KEY = os.environ.get("APP_API_KEY")
-DATABASE_URL = os.environ.get("DATABASE_URL", "").replace("postgres://", "postgresql://", 1)
+DATABASE_URL = (
+    os.environ.get("DATABASE_URL", "")
+    .replace("postgres://", "postgresql://", 1)
+    .replace("postgresql://", "postgresql+psycopg://", 1)
+)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KNOWLEDGE_DIR = os.path.join(BASE_DIR, "knowledge")
