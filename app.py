@@ -265,17 +265,25 @@ def webhook():
 def notify():
     data = request.json or {}
     to = data.get("to")
+    template_name = data.get("template_name", "euromaster")
+    language = data.get("language", "bg")
     placeholders = data.get("placeholders")
+    context_summary = data.get("context_summary")
 
     if not to:
         return jsonify({"status": "error", "message": "'to' is required"}), 400
 
     status, response_text = send_template_notification(
         to=to,
-        template_name="euromaster",
-        language="bg",
+        template_name=template_name,
+        language=language,
         placeholders=placeholders
     )
+
+    if context_summary:
+        history = CONVERSATIONS.get(to, [])
+        history.append({"role": "assistant", "content": context_summary})
+        CONVERSATIONS[to] = history[-MAX_HISTORY_MESSAGES:]
 
     return jsonify({"status": "sent", "infobip_status": status, "infobip_response": response_text}), 200
 
