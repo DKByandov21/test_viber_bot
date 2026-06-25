@@ -159,8 +159,7 @@ th {
   border-color: #5b5be0;
 }
 
-.form button,
-.actions button {
+button {
   padding: 9px 16px;
   border: none;
   border-radius: 8px;
@@ -168,19 +167,20 @@ th {
   color: #fff;
   cursor: pointer;
   font-weight: 600;
+  font-family: inherit;
+  font-size: 14px;
 }
 
-.form button:hover,
-.actions button:hover {
+button:hover {
   background: #4a4ad0;
 }
 
-.actions button.secondary {
+button.secondary {
   background: #e5e4f5;
   color: #3a3a5c;
 }
 
-.actions button.secondary:hover {
+button.secondary:hover {
   background: #d6d4f0;
 }
 
@@ -311,4 +311,117 @@ th {
 
 .auth-card .form button {
   margin-top: 6px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.25s ease;
+}
+
+.stats-row {
+  display: flex;
+  gap: 16px;
+  margin: 16px 0 24px;
+}
+
+.stat-card {
+  flex: 1;
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  border-left: 4px solid #5b5be0;
+  transition: transform 0.15s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-card.accent {
+  border-left-color: #2ecc71;
+}
+
+.stat-card.warn {
+  border-left-color: #f39c12;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #888;
+  margin-top: 4px;
+}
+
+.status-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-pill.active {
+  background: #e3f9ec;
+  color: #1c8a4d;
+}
+
+.status-pill.closed {
+  background: #f0f0f0;
+  color: #888;
+}
+
+.status-pill.agent {
+  background: #fdf1da;
+  color: #b8740a;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: #5b5be0;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.bubble-time {
+  display: block;
+  font-size: 10px;
+  opacity: 0.6;
+  margin-top: 4px;
+}
+
+.agent-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.agent-card-header h3 {
+  margin: 0;
+}
+
+table tbody tr {
+  transition: background 0.15s ease;
+}
+
+table tbody tr:hover {
+  background: #f8f8fc;
+}
+
+a {
+  transition: opacity 0.15s ease;
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 import { api } from "../api"
+import { formatTime } from "../utils/time"
 
 export default function ConversationDetail() {
   const { sender } = useParams()
@@ -20,19 +21,23 @@ export default function ConversationDetail() {
     setHistory([])
   }
 
-  if (loading) return <p>Зареждане...</p>
+  if (loading) return <p className="page-loading">Зареждане...</p>
   if (error) return <p className="error">Грешка: {error}</p>
 
   return (
-    <div>
-      <h2>Разговор с {sender}</h2>
-      <button onClick={handleReset}>Изчисти разговора</button>
+    <div className="fade-in">
+      <Link to="/" className="back-link">← Всички разговори</Link>
+      <div className="page-header">
+        <h2>{sender}</h2>
+        <button className="secondary" onClick={handleReset}>Изчисти разговора</button>
+      </div>
       <div className="chat-log">
-        {history.length === 0 && <p>Няма съобщения.</p>}
+        {history.length === 0 && <p className="muted">Няма съобщения.</p>}
         {history.map((msg, i) => (
           <div key={i} className={`bubble ${msg.role}`}>
-            <strong>{msg.role}</strong>
+            <strong>{msg.role === "user" ? "Клиент" : "Бот"}</strong>
             <p>{msg.content}</p>
+            {msg.at && <span className="bubble-time">{formatTime(msg.at)}</span>}
           </div>
         ))}
       </div>

@@ -1,5 +1,19 @@
+from datetime import datetime, timedelta, timezone
+
 from viberbot import config
 from viberbot.db import Conversation, Template, db
+
+
+def _now():
+    return datetime.now(timezone.utc)
+
+
+def is_active(updated_at):
+    if not updated_at:
+        return False
+    if updated_at.tzinfo is None:
+        updated_at = updated_at.replace(tzinfo=timezone.utc)
+    return _now() - updated_at < timedelta(minutes=config.CONVERSATION_TIMEOUT_MINUTES)
 
 
 def _get_or_create(sender):
@@ -16,11 +30,22 @@ def get_history(sender):
     return convo.history if convo else []
 
 
+def ensure_fresh_session(sender):
+    """If the conversation went quiet for longer than the timeout, treat the
+    next message as a brand new session (clears AI memory, keeps agent_mode off)."""
+    convo = Conversation.query.filter_by(sender=sender).first()
+    if convo and convo.history and not is_active(convo.updated_at):
+        convo.history = []
+        convo.agent_mode = False
+        db.session.commit()
+
+
 def append_history(sender, user_message, assistant_reply):
     convo = _get_or_create(sender)
     history = list(convo.history or [])
-    history.append({"role": "user", "content": user_message})
-    history.append({"role": "assistant", "content": assistant_reply})
+    now = _now().isoformat()
+    history.append({"role": "user", "content": user_message, "at": now})
+    history.append({"role": "assistant", "content": assistant_reply, "at": now})
     convo.history = history[-config.MAX_HISTORY_MESSAGES:]
     db.session.commit()
 
@@ -28,7 +53,7 @@ def append_history(sender, user_message, assistant_reply):
 def append_assistant_note(sender, content):
     convo = _get_or_create(sender)
     history = list(convo.history or [])
-    history.append({"role": "assistant", "content": content})
+    history.append({"role": "assistant", "content": content, "at": _now().isoformat()})
     convo.history = history[-config.MAX_HISTORY_MESSAGES:]
     db.session.commit()
 

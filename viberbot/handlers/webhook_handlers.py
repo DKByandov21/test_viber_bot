@@ -37,6 +37,8 @@ def handle_button_reply(sender, channel, payload):
 
 
 def handle_text_message(sender, channel, text):
+    state.ensure_fresh_session(sender)
+
     if state.is_agent_mode(sender):
         reply_on_same_channel(channel, sender, "Агентът е известен и ще ти отговори скоро.")
         return

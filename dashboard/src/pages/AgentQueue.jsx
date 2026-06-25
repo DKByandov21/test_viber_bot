@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { api } from "../api"
+import { timeAgo } from "../utils/time"
 
 const POLL_INTERVAL_MS = 8000
 
@@ -58,12 +59,16 @@ export default function AgentQueue() {
 
       {queue.map((c) => (
         <div key={c.sender} className="agent-card">
-          <h3>{c.sender}</h3>
+          <div className="agent-card-header">
+            <h3>{c.sender}</h3>
+            <span className="muted">{timeAgo(c.updated_at)}</span>
+          </div>
           <div className="chat-log small">
             {(c.history || []).slice(-4).map((msg, i) => (
               <div key={i} className={`bubble ${msg.role}`}>
-                <strong>{msg.role}</strong>
+                <strong>{msg.role === "user" ? "Клиент" : "Бот"}</strong>
                 <p>{msg.content}</p>
+                {msg.at && <span className="bubble-time">{timeAgo(msg.at)}</span>}
               </div>
             ))}
           </div>

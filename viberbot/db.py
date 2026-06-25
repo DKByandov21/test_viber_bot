@@ -47,11 +47,14 @@ class Conversation(db.Model):
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
 
     def to_dict(self):
+        from viberbot.services.state import is_active
+
         return {
             "sender": self.sender,
             "history": self.history,
             "agent_mode": self.agent_mode,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "is_active": is_active(self.updated_at),
         }
 
 
