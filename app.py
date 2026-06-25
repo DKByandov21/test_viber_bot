@@ -214,10 +214,14 @@ def webhook():
         results = data.get("results", [])
         for msg in results:
             sender = msg.get("sender") or msg.get("from")
-            channel = msg.get("channel", "VIBER_BOT")
+            channel = msg.get("channel")
             content = msg.get("content")
-            item = content[0] if isinstance(content, list) and content else {}
-            content_type = item.get("type", "TEXT")
+            has_content_list = isinstance(content, list) and content
+            item = content[0] if has_content_list else {}
+            content_type = item.get("type", "TEXT") if has_content_list else None
+
+            if channel is None:
+                channel = "VIBER_BOT" if has_content_list else "VIBER_BM"
 
             if content_type == "BUTTON_REPLY":
                 payload = item.get("payload")
@@ -237,7 +241,7 @@ def webhook():
                     reply_on_same_channel(channel, sender, "Питай ме нещо за Infobip!")
                 continue
 
-            text = item.get("text", "") if content_type == "TEXT" else msg.get("message", {}).get("text", "")
+            text = item.get("text", "") if has_content_list else msg.get("message", {}).get("text", "")
             print(f"From: {sender}, Channel: {channel}, Text: {text}")
             if not (sender and text):
                 continue
