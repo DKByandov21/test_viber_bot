@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 
-from viberbot import config
 from viberbot.auth import require_api_key
+from viberbot.services import state
 from viberbot.services.groq_client import remember_notification
 from viberbot.services.infobip_client import send_template_notification
 
@@ -21,11 +21,12 @@ def notify():
 
     template_key = data.get("template")
     if template_key:
-        template = config.TEMPLATES.get(template_key)
+        template = state.get_template(template_key)
         if not template:
+            known = [t["key"] for t in state.list_templates()]
             return jsonify({
                 "status": "error",
-                "message": f"Unknown template '{template_key}'. Known: {list(config.TEMPLATES.keys())}"
+                "message": f"Unknown template '{template_key}'. Known: {known}"
             }), 400
         template_name, language = template["id"], template["language"]
     else:

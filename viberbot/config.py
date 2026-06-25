@@ -5,6 +5,7 @@ INFOBIP_BASE_URL = os.environ.get("INFOBIP_BASE_URL")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 APP_API_KEY = os.environ.get("APP_API_KEY")
+DATABASE_URL = os.environ.get("DATABASE_URL", "").replace("postgres://", "postgresql://", 1)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KNOWLEDGE_DIR = os.path.join(BASE_DIR, "knowledge")
@@ -27,29 +28,3 @@ REPLY_BUTTONS = [
     {"type": "REPLY", "text": "Край", "postbackData": "END_CHAT"}
 ]
 
-# Registered Viber Business Message templates, keyed by a friendly name so
-# /notify callers don't need to remember raw Infobip template IDs.
-# "params" lists the placeholder keys the template body expects.
-TEMPLATES = {
-    "order_confirmation": {
-        "id": "bb862b91-b6f0-4e1c-a31e-ebdcc822b240",
-        "language": "bg",
-        "params": ["1", "2", "3", "4", "5"],
-        "description": "name, order_id, item, amount, delivery_address - confirmed working via API"
-    },
-    "otp": {
-        "id": "5fafdcbe-8f81-4116-a14f-fabedb38b194",
-        "language": "en",
-        "params": ["pin"],
-    },
-    "euromaster": {
-        "id": "97510a1e-11c6-4748-b4f4-b9c78e1a7b6b",
-        "language": "bg",
-        "params": ["First_name"],
-        "description": "rich media (image + button) - operator rejects via API, use Broadcast instead"
-    },
-}
-
-# In-memory only: cleared on every process restart/redeploy.
-CONVERSATIONS = {}
-AGENT_MODE_USERS = set()

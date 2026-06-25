@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 
-from viberbot import config
 from viberbot.auth import require_api_key
+from viberbot.services import state
 from viberbot.services.infobip_client import send_viber_bot_message
 
 bp = Blueprint("agent", __name__)
@@ -18,10 +18,7 @@ def agent_reply():
     if not to or not text:
         return jsonify({"status": "error", "message": "'to' and 'text' are required"}), 400
 
-    if release_agent_mode:
-        config.AGENT_MODE_USERS.discard(to)
-    else:
-        config.AGENT_MODE_USERS.add(to)
+    state.set_agent_mode(to, not release_agent_mode)
 
     status = send_viber_bot_message(to, text)
     return jsonify({"status": "sent", "infobip_status": status}), 200

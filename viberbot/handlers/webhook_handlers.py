@@ -1,4 +1,5 @@
 from viberbot import config
+from viberbot.services import state
 from viberbot.services.groq_client import ask_groq
 from viberbot.services.infobip_client import reply_on_same_channel, send_sms_notification
 
@@ -25,19 +26,18 @@ def parse_inbound_message(msg):
 
 def handle_button_reply(sender, channel, payload):
     if payload == "CONTACT_AGENT":
-        config.AGENT_MODE_USERS.add(sender)
+        state.set_agent_mode(sender, True)
         send_sms_notification(config.AGENT_NOTIFY_PHONE, f"Клиент {sender} иска да говори с агент във Viber бота.")
         reply_on_same_channel(channel, sender, "Свързваме те с агент. Очаквай отговор скоро!")
     elif payload == "END_CHAT":
-        config.CONVERSATIONS.pop(sender, None)
-        config.AGENT_MODE_USERS.discard(sender)
+        state.clear_conversation(sender)
         reply_on_same_channel(channel, sender, "Разговорът приключи. Пиши ми пак, когато имаш въпрос!")
     elif payload == "ANOTHER_QUESTION":
         reply_on_same_channel(channel, sender, "Питай ме нещо за Infobip!")
 
 
 def handle_text_message(sender, channel, text):
-    if sender in config.AGENT_MODE_USERS:
+    if state.is_agent_mode(sender):
         reply_on_same_channel(channel, sender, "Агентът е известен и ще ти отговори скоро.")
         return
     ai_reply = ask_groq(sender, text)
