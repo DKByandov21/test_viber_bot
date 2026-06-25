@@ -1,17 +1,30 @@
 import { useEffect, useState } from "react"
 import { api } from "../api"
 
+const POLL_INTERVAL_MS = 8000
+
 export default function AgentQueue() {
   const [queue, setQueue] = useState([])
   const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [replyText, setReplyText] = useState({})
   const [sending, setSending] = useState(null)
 
   const load = () => {
-    api.agentQueue().then(setQueue).catch((e) => setError(e.message))
+    api.agentQueue()
+      .then((data) => {
+        setQueue(data)
+        setError(null)
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false))
   }
 
-  useEffect(load, [])
+  useEffect(() => {
+    load()
+    const interval = setInterval(load, POLL_INTERVAL_MS)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleReply = async (sender, release) => {
     setSending(sender)
@@ -26,12 +39,23 @@ export default function AgentQueue() {
     }
   }
 
-  if (error) return <p className="error">Грешка: {error}</p>
-
   return (
     <div>
-      <h2>Чакащи агент</h2>
-      {queue.length === 0 && <p>Никой не чака агент в момента.</p>}
+      <div className="page-header">
+        <h2>Чакащи агент</h2>
+        <span className="badge">{queue.length}</span>
+      </div>
+
+      {error && <p className="error">Грешка: {error}</p>}
+
+      {!loading && queue.length === 0 && !error && (
+        <div className="empty-state">
+          <div className="empty-icon">✅</div>
+          <p>Никой не чака агент в момента.</p>
+          <p className="muted">Списъкът се обновява автоматично на всеки {POLL_INTERVAL_MS / 1000}с.</p>
+        </div>
+      )}
+
       {queue.map((c) => (
         <div key={c.sender} className="agent-card">
           <h3>{c.sender}</h3>
@@ -52,7 +76,7 @@ export default function AgentQueue() {
             <button disabled={sending === c.sender} onClick={() => handleReply(c.sender, false)}>
               Изпрати
             </button>
-            <button disabled={sending === c.sender} onClick={() => handleReply(c.sender, true)}>
+            <button className="secondary" disabled={sending === c.sender} onClick={() => handleReply(c.sender, true)}>
               Изпрати и върни на AI
             </button>
           </div>

@@ -1,5 +1,9 @@
 import { Route, BrowserRouter, Routes } from "react-router-dom"
+import { AuthProvider } from "./auth/AuthContext"
+import ProtectedRoute from "./auth/ProtectedRoute"
 import Layout from "./components/Layout"
+import Login from "./pages/Login"
+import Register from "./pages/Register"
 import Conversations from "./pages/Conversations"
 import ConversationDetail from "./pages/ConversationDetail"
 import AgentQueue from "./pages/AgentQueue"
@@ -9,15 +13,21 @@ import Notify from "./pages/Notify"
 export default function App() {
   return (
     <BrowserRouter basename="/dashboard">
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Conversations />} />
-          <Route path="/conversations/:sender" element={<ConversationDetail />} />
-          <Route path="/agent-queue" element={<AgentQueue />} />
-          <Route path="/templates" element={<Templates />} />
-          <Route path="/notify" element={<Notify />} />
-        </Route>
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route element={<ProtectedRoute />}>
+            <Route element={<Layout />}>
+              <Route path="/" element={<Conversations />} />
+              <Route path="/conversations/:sender" element={<ConversationDetail />} />
+              <Route path="/agent-queue" element={<AgentQueue />} />
+              <Route path="/templates" element={<Templates />} />
+              <Route path="/notify" element={<Notify />} />
+            </Route>
+          </Route>
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   )
 }

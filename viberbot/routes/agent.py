@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from viberbot.auth import require_api_key
+from viberbot.auth import require_session
 from viberbot.services import state
 from viberbot.services.infobip_client import send_viber_bot_message
 
@@ -8,7 +8,7 @@ bp = Blueprint("agent", __name__)
 
 
 @bp.route("/agent-reply", methods=["POST"])
-@require_api_key
+@require_session
 def agent_reply():
     data = request.json or {}
     to = data.get("to")

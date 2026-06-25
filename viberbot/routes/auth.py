@@ -1,0 +1,57 @@
+from flask import Blueprint, g, jsonify, request
+
+from viberbot.auth import require_session
+from viberbot.services.auth_service import AuthError, register, start_login, verify_otp
+
+bp = Blueprint("auth", __name__, url_prefix="/api/auth")
+
+
+@bp.route("/register", methods=["POST"])
+def register_route():
+    data = request.json or {}
+    email, password, phone = data.get("email"), data.get("password"), data.get("phone")
+    if not email or not password or not phone:
+        return jsonify({"status": "error", "message": "'email', 'password' and 'phone' are required"}), 400
+
+    try:
+        user = register(email, password, phone)
+    except AuthError as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+    return jsonify({"status": "registered", "user": user.to_dict()}), 201
+
+
+@bp.route("/login", methods=["POST"])
+def login_route():
+    data = request.json or {}
+    email, password = data.get("email"), data.get("password")
+    if not email or not password:
+        return jsonify({"status": "error", "message": "'email' and 'password' are required"}), 400
+
+    try:
+        otp_id = start_login(email, password)
+    except AuthError as e:
+        return jsonify({"status": "error", "message": str(e)}), 401
+
+    return jsonify({"status": "otp_sent", "otp_id": otp_id}), 200
+
+
+@bp.route("/verify", methods=["POST"])
+def verify_route():
+    data = request.json or {}
+    otp_id, code = data.get("otp_id"), data.get("code")
+    if not otp_id or not code:
+        return jsonify({"status": "error", "message": "'otp_id' and 'code' are required"}), 400
+
+    try:
+        token, user = verify_otp(otp_id, code)
+    except AuthError as e:
+        return jsonify({"status": "error", "message": str(e)}), 401
+
+    return jsonify({"status": "ok", "token": token, "user": user.to_dict()}), 200
+
+
+@bp.route("/me", methods=["GET"])
+@require_session
+def me_route():
+    return jsonify(g.user.to_dict()), 200

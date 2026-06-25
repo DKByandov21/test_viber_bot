@@ -1,44 +1,44 @@
 from flask import Blueprint, jsonify, request
 
-from viberbot.auth import require_api_key
+from viberbot.auth import require_session
 from viberbot.services import state
 
 bp = Blueprint("dashboard_api", __name__, url_prefix="/api")
 
 
 @bp.route("/conversations", methods=["GET"])
-@require_api_key
+@require_session
 def list_conversations():
     return jsonify(state.list_conversations()), 200
 
 
 @bp.route("/conversations/<sender>", methods=["GET"])
-@require_api_key
+@require_session
 def get_conversation(sender):
     return jsonify({"sender": sender, "history": state.get_history(sender)}), 200
 
 
 @bp.route("/conversations/<sender>", methods=["DELETE"])
-@require_api_key
+@require_session
 def reset_conversation(sender):
     state.clear_conversation(sender)
     return jsonify({"status": "cleared", "sender": sender}), 200
 
 
 @bp.route("/agent-queue", methods=["GET"])
-@require_api_key
+@require_session
 def agent_queue():
     return jsonify(state.list_agent_queue()), 200
 
 
 @bp.route("/templates", methods=["GET"])
-@require_api_key
+@require_session
 def list_templates():
     return jsonify(state.list_templates()), 200
 
 
 @bp.route("/templates", methods=["POST"])
-@require_api_key
+@require_session
 def create_template():
     data = request.json or {}
     key = data.get("key")
@@ -55,7 +55,7 @@ def create_template():
 
 
 @bp.route("/templates/<key>", methods=["PUT"])
-@require_api_key
+@require_session
 def update_template(key):
     existing = state.get_template(key)
     if not existing:
@@ -73,7 +73,7 @@ def update_template(key):
 
 
 @bp.route("/templates/<key>", methods=["DELETE"])
-@require_api_key
+@require_session
 def delete_template(key):
     if not state.delete_template(key):
         return jsonify({"status": "error", "message": f"Template '{key}' not found"}), 404

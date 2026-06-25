@@ -15,6 +15,7 @@ def create_app():
     init_db(app)
 
     from viberbot.routes.agent import bp as agent_bp
+    from viberbot.routes.auth import bp as auth_bp
     from viberbot.routes.dashboard_api import bp as dashboard_api_bp
     from viberbot.routes.dashboard_spa import bp as dashboard_spa_bp
     from viberbot.routes.health import bp as health_bp
@@ -24,6 +25,7 @@ def create_app():
     app.register_blueprint(webhook_bp)
     app.register_blueprint(notify_bp)
     app.register_blueprint(agent_bp)
+    app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_api_bp)
     app.register_blueprint(dashboard_spa_bp)
     app.register_blueprint(health_bp)

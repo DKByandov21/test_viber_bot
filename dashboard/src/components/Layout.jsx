@@ -1,21 +1,21 @@
-import { useState } from "react"
-import { Link, Outlet, useLocation } from "react-router-dom"
-import { getApiKey, setApiKey } from "../api"
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
+import { useAuth } from "../auth/AuthContext"
 
 const NAV_ITEMS = [
-  { to: "/", label: "Разговори" },
-  { to: "/agent-queue", label: "Agent Queue" },
-  { to: "/templates", label: "Templates" },
-  { to: "/notify", label: "Изпрати Notify" },
+  { to: "/", label: "Разговори", icon: "💬" },
+  { to: "/agent-queue", label: "Agent Queue", icon: "🧑‍💼" },
+  { to: "/templates", label: "Templates", icon: "📄" },
+  { to: "/notify", label: "Изпрати Notify", icon: "📤" },
 ]
 
 export default function Layout() {
   const location = useLocation()
-  const [keyInput, setKeyInput] = useState(getApiKey())
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
 
-  const saveKey = () => {
-    setApiKey(keyInput.trim())
-    window.location.reload()
+  const handleLogout = () => {
+    logout()
+    navigate("/login")
   }
 
   return (
@@ -29,19 +29,13 @@ export default function Layout() {
               to={item.to}
               className={location.pathname === item.to ? "active" : ""}
             >
-              {item.label}
+              <span className="nav-icon">{item.icon}</span> {item.label}
             </Link>
           ))}
         </nav>
-        <div className="api-key-box">
-          <label>X-API-Key</label>
-          <input
-            type="password"
-            value={keyInput}
-            onChange={(e) => setKeyInput(e.target.value)}
-            placeholder="API key"
-          />
-          <button onClick={saveKey}>Запази</button>
+        <div className="user-box">
+          <div className="user-email">{user?.email}</div>
+          <button onClick={handleLogout}>Изход</button>
         </div>
       </aside>
       <main className="content">

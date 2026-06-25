@@ -1,11 +1,15 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ""
 
-export function getApiKey() {
-  return localStorage.getItem("apiKey") || ""
+export function getToken() {
+  return localStorage.getItem("token") || ""
 }
 
-export function setApiKey(key) {
-  localStorage.setItem("apiKey", key)
+export function setToken(token) {
+  localStorage.setItem("token", token)
+}
+
+export function clearToken() {
+  localStorage.removeItem("token")
 }
 
 async function request(path, options = {}) {
@@ -13,7 +17,7 @@ async function request(path, options = {}) {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      "X-API-Key": getApiKey(),
+      Authorization: `Bearer ${getToken()}`,
       ...options.headers,
     },
   })
@@ -23,6 +27,13 @@ async function request(path, options = {}) {
     throw new Error(data.message || `Request failed: ${response.status}`)
   }
   return data
+}
+
+export const authApi = {
+  register: (payload) => request("/api/auth/register", { method: "POST", body: JSON.stringify(payload) }),
+  login: (payload) => request("/api/auth/login", { method: "POST", body: JSON.stringify(payload) }),
+  verify: (payload) => request("/api/auth/verify", { method: "POST", body: JSON.stringify(payload) }),
+  me: () => request("/api/auth/me"),
 }
 
 export const api = {
