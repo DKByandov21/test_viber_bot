@@ -1,6 +1,6 @@
-import config
-from groq_client import ask_groq
-from infobip_client import reply_on_same_channel, send_sms_notification
+from viberbot import config
+from viberbot.services.groq_client import ask_groq
+from viberbot.services.infobip_client import reply_on_same_channel, send_sms_notification
 
 
 def parse_inbound_message(msg):

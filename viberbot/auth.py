@@ -2,7 +2,7 @@ from functools import wraps
 
 from flask import jsonify, request
 
-import config
+from viberbot import config
 
 
 def require_api_key(view):

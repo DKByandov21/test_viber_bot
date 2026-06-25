@@ -1,6 +1,6 @@
 import requests
 
-import config
+from viberbot import config
 
 
 def send_viber_message(channel, sender, to, text, buttons=None):

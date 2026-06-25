@@ -1,7 +1,7 @@
 import requests
 
-import config
-from knowledge_base import find_relevant_chunks
+from viberbot import config
+from viberbot.services.knowledge_base import find_relevant_chunks
 
 
 def ask_groq(sender, user_message):

@@ -2,7 +2,7 @@ import glob
 import os
 import re
 
-import config
+from viberbot import config
 
 
 def load_knowledge_chunks():

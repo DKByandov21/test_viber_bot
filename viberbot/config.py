@@ -6,7 +6,9 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 APP_API_KEY = os.environ.get("APP_API_KEY")
 
-KNOWLEDGE_DIR = os.path.join(os.path.dirname(__file__), "knowledge")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+KNOWLEDGE_DIR = os.path.join(BASE_DIR, "knowledge")
+
 VIBER_TEXT_LIMIT = 1000
 MAX_HISTORY_MESSAGES = 10
 AGENT_NOTIFY_PHONE = "359876888400"
