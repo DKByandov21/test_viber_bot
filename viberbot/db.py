@@ -78,6 +78,9 @@ def init_db(app):
         print("DATABASE_URL not set - skipping DB initialization")
         return
     db.init_app(app)
-    with app.app_context():
-        db.create_all()
-        seed_default_templates()
+    try:
+        with app.app_context():
+            db.create_all()
+            seed_default_templates()
+    except Exception as e:
+        print(f"DB initialization failed, continuing without it: {e}")
