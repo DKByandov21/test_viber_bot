@@ -1,6 +1,7 @@
 import { Route, BrowserRouter, Routes } from "react-router-dom"
 import { AuthProvider } from "./auth/AuthContext"
 import ProtectedRoute from "./auth/ProtectedRoute"
+import AdminRoute from "./auth/AdminRoute"
 import Layout from "./components/Layout"
 import Login from "./pages/Login"
 import Register from "./pages/Register"
@@ -11,6 +12,8 @@ import AgentQueue from "./pages/AgentQueue"
 import Templates from "./pages/Templates"
 import Notify from "./pages/Notify"
 import Settings from "./pages/Settings"
+import Users from "./pages/Users"
+import Analytics from "./pages/Analytics"
 
 export default function App() {
   return (
@@ -25,9 +28,13 @@ export default function App() {
               <Route path="/conversations/:sender" element={<ConversationDetail />} />
               <Route path="/conversations/:sender/sessions/:id" element={<SessionDetail />} />
               <Route path="/agent-queue" element={<AgentQueue />} />
-              <Route path="/templates" element={<Templates />} />
-              <Route path="/notify" element={<Notify />} />
               <Route path="/settings" element={<Settings />} />
+              <Route element={<AdminRoute />}>
+                <Route path="/templates" element={<Templates />} />
+                <Route path="/notify" element={<Notify />} />
+                <Route path="/users" element={<Users />} />
+                <Route path="/analytics" element={<Analytics />} />
+              </Route>
             </Route>
           </Route>
         </Routes>

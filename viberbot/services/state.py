@@ -137,6 +137,52 @@ def get_session(session_id):
     return s.to_dict() if s else None
 
 
+def get_stats():
+    conversations = Conversation.query.all()
+    sessions = ConversationSession.query.all()
+
+    today = _now().date()
+
+    def count_messages(history, role=None):
+        if not role:
+            return len(history)
+        return sum(1 for m in history if m.get("role") == role)
+
+    def is_today(msg_at):
+        if not msg_at:
+            return False
+        try:
+            return datetime.fromisoformat(msg_at).date() == today
+        except ValueError:
+            return False
+
+    total_messages = 0
+    messages_today = 0
+    agent_handled = 0
+    ai_only = 0
+
+    all_histories = [c.history or [] for c in conversations] + [s.history or [] for s in sessions]
+
+    for history in all_histories:
+        total_messages += len(history)
+        messages_today += sum(1 for m in history if is_today(m.get("at")))
+        if any(m.get("role") == "agent" for m in history):
+            agent_handled += 1
+        elif history:
+            ai_only += 1
+
+    return {
+        "total_customers": len(conversations),
+        "total_sessions": len(sessions) + sum(1 for c in conversations if c.history),
+        "total_messages": total_messages,
+        "messages_today": messages_today,
+        "agent_handled_sessions": agent_handled,
+        "ai_only_sessions": ai_only,
+        "agent_queue_count": sum(1 for c in conversations if c.agent_mode),
+        "active_now": sum(1 for c in conversations if is_active(c.updated_at)),
+    }
+
+
 def list_conversations():
     return [c.to_dict() for c in Conversation.query.order_by(Conversation.updated_at.desc()).all()]
 

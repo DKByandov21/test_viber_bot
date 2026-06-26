@@ -15,3 +15,12 @@ def require_session(view):
         g.user = user
         return view(*args, **kwargs)
     return wrapped
+
+
+def require_admin(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if not getattr(g, "user", None) or g.user.role != "admin":
+            return jsonify({"status": "error", "message": "Admin access required"}), 403
+        return view(*args, **kwargs)
+    return wrapped

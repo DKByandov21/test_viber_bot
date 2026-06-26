@@ -12,10 +12,11 @@ class User(db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     phone = db.Column(db.String(32), nullable=False)
+    role = db.Column(db.String(16), nullable=False, default="agent")
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     def to_dict(self):
-        return {"id": self.id, "email": self.email, "phone": self.phone}
+        return {"id": self.id, "email": self.email, "phone": self.phone, "role": self.role}
 
 
 class OtpCode(db.Model):
@@ -138,6 +139,17 @@ def seed_default_templates():
     db.session.commit()
 
 
+def promote_first_user_to_admin():
+    """Guarantees there's always at least one admin: if none exists yet,
+    promote whoever registered first."""
+    if User.query.filter_by(role="admin").first():
+        return
+    first_user = User.query.order_by(User.created_at.asc()).first()
+    if first_user:
+        first_user.role = "admin"
+        db.session.commit()
+
+
 def init_db(app):
     if not app.config.get("SQLALCHEMY_DATABASE_URI"):
         print("DATABASE_URL not set - skipping DB initialization")
@@ -150,7 +162,11 @@ def init_db(app):
                 conn.execute(db.text(
                     "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS channel VARCHAR(32) NOT NULL DEFAULT 'VIBER_BOT'"
                 ))
+                conn.execute(db.text(
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(16) NOT NULL DEFAULT 'agent'"
+                ))
                 conn.commit()
             seed_default_templates()
+            promote_first_user_to_admin()
     except Exception as e:
         print(f"DB initialization failed, continuing without it: {e}")

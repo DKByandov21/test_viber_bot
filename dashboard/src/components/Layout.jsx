@@ -5,14 +5,18 @@ import { useAuth } from "../auth/AuthContext"
 const NAV_ITEMS = [
   { to: "/", label: "Разговори", icon: "💬" },
   { to: "/agent-queue", label: "Agent Queue", icon: "🧑‍💼" },
-  { to: "/templates", label: "Templates", icon: "📄" },
-  { to: "/notify", label: "Изпрати Notify", icon: "📤" },
+  { to: "/templates", label: "Templates", icon: "📄", adminOnly: true },
+  { to: "/notify", label: "Изпрати Notify", icon: "📤", adminOnly: true },
+  { to: "/analytics", label: "Analytics", icon: "📊", adminOnly: true },
+  { to: "/users", label: "Потребители", icon: "👥", adminOnly: true },
 ]
 
 export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
   const { user, logout } = useAuth()
+  const isAdmin = user?.role === "admin"
+  const visibleNavItems = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin)
 
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem("sidebarCollapsed") === "true")
 
@@ -41,7 +45,7 @@ export default function Layout() {
           </button>
         </div>
         <nav>
-          {NAV_ITEMS.map((item) => (
+          {visibleNavItems.map((item) => (
             <Link
               key={item.to}
               to={item.to}

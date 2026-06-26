@@ -50,4 +50,8 @@ export const api = {
   deleteTemplate: (key) => request(`/api/templates/${encodeURIComponent(key)}`, { method: "DELETE" }),
   notify: (payload) => request("/notify", { method: "POST", body: JSON.stringify(payload) }),
   agentReply: (payload) => request("/agent-reply", { method: "POST", body: JSON.stringify(payload) }),
+  stats: () => request("/api/stats"),
+  listUsers: () => request("/api/users"),
+  updateUserRole: (id, role) => request(`/api/users/${id}`, { method: "PUT", body: JSON.stringify({ role }) }),
+  deleteUser: (id) => request(`/api/users/${id}`, { method: "DELETE" }),
 }

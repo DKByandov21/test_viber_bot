@@ -1,9 +1,16 @@
 from flask import Blueprint, jsonify, request
 
-from viberbot.auth import require_session
+from viberbot.auth import require_admin, require_session
 from viberbot.services import state
 
 bp = Blueprint("dashboard_api", __name__, url_prefix="/api")
+
+
+@bp.route("/stats", methods=["GET"])
+@require_session
+@require_admin
+def stats():
+    return jsonify(state.get_stats()), 200
 
 
 @bp.route("/conversations", methods=["GET"])
@@ -48,12 +55,14 @@ def agent_queue():
 
 @bp.route("/templates", methods=["GET"])
 @require_session
+@require_admin
 def list_templates():
     return jsonify(state.list_templates()), 200
 
 
 @bp.route("/templates", methods=["POST"])
 @require_session
+@require_admin
 def create_template():
     data = request.json or {}
     key = data.get("key")
@@ -71,6 +80,7 @@ def create_template():
 
 @bp.route("/templates/<key>", methods=["PUT"])
 @require_session
+@require_admin
 def update_template(key):
     existing = state.get_template(key)
     if not existing:
@@ -89,6 +99,7 @@ def update_template(key):
 
 @bp.route("/templates/<key>", methods=["DELETE"])
 @require_session
+@require_admin
 def delete_template(key):
     if not state.delete_template(key):
         return jsonify({"status": "error", "message": f"Template '{key}' not found"}), 404

@@ -20,6 +20,7 @@ def create_app():
     from viberbot.routes.dashboard_spa import bp as dashboard_spa_bp
     from viberbot.routes.health import bp as health_bp
     from viberbot.routes.notify import bp as notify_bp
+    from viberbot.routes.users import bp as users_bp
     from viberbot.routes.webhook import bp as webhook_bp
 
     app.register_blueprint(webhook_bp)
@@ -28,6 +29,7 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_api_bp)
     app.register_blueprint(dashboard_spa_bp)
+    app.register_blueprint(users_bp)
     app.register_blueprint(health_bp)
 
     return app

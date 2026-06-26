@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from viberbot.auth import require_session
+from viberbot.auth import require_admin, require_session
 from viberbot.services import state
 from viberbot.services.groq_client import remember_notification
 from viberbot.services.infobip_client import send_template_notification
@@ -10,6 +10,7 @@ bp = Blueprint("notify", __name__)
 
 @bp.route("/notify", methods=["POST"])
 @require_session
+@require_admin
 def notify():
     data = request.json or {}
     to = data.get("to")

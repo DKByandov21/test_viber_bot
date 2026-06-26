@@ -402,6 +402,13 @@ button.secondary:hover {
   margin: 16px 0 24px;
 }
 
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin: 16px 0 24px;
+}
+
 .stat-card {
   flex: 1;
   background: #fff;
