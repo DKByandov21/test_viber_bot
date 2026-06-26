@@ -4,10 +4,17 @@ from viberbot.services.groq_client import ask_groq
 from viberbot.services.infobip_client import reply_on_same_channel, send_sms_notification
 
 
+KNOWN_BUTTON_PAYLOADS = {"CONTACT_AGENT", "END_CHAT", "ANOTHER_QUESTION"}
+
+
 def parse_inbound_message(msg):
     """Normalizes the two inbound shapes Infobip sends us:
     legacy VBM ({"from", "message": {"text"}}) and the VIBER_BOT MO event
-    ({"sender", "channel", "content": [{"type", "text"}]})."""
+    ({"sender", "channel", "content": [{"type", "text"}]}).
+
+    Button clicks are sometimes delivered as a structured BUTTON_REPLY content
+    item, but Viber Bot quick replies often just arrive as plain TEXT whose
+    content is the button's postbackData verbatim - so we also recognize that."""
     sender = msg.get("sender") or msg.get("from")
     channel = msg.get("channel")
     content = msg.get("content")
@@ -20,6 +27,10 @@ def parse_inbound_message(msg):
 
     text = item.get("text", "") if has_content_list else msg.get("message", {}).get("text", "")
     button_payload = item.get("payload") if content_type == "BUTTON_REPLY" else None
+
+    if not button_payload and text in KNOWN_BUTTON_PAYLOADS:
+        content_type = "BUTTON_REPLY"
+        button_payload = text
 
     return sender, channel, content_type, text, button_payload
 
