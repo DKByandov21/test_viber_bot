@@ -25,6 +25,21 @@ def reset_conversation(sender):
     return jsonify({"status": "cleared", "sender": sender}), 200
 
 
+@bp.route("/conversations/<sender>/sessions", methods=["GET"])
+@require_session
+def list_conversation_sessions(sender):
+    return jsonify(state.list_sessions(sender)), 200
+
+
+@bp.route("/sessions/<int:session_id>", methods=["GET"])
+@require_session
+def get_conversation_session(session_id):
+    session = state.get_session(session_id)
+    if not session:
+        return jsonify({"status": "error", "message": "Session not found"}), 404
+    return jsonify(session), 200
+
+
 @bp.route("/agent-queue", methods=["GET"])
 @require_session
 def agent_queue():

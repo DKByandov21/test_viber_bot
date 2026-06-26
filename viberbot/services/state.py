@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from viberbot import config
-from viberbot.db import Conversation, Template, db
+from viberbot.db import Conversation, ConversationSession, Template, db
 
 
 def _now():
@@ -30,11 +30,30 @@ def get_history(sender):
     return convo.history if convo else []
 
 
+def _archive_session(convo):
+    """Snapshots the current history into conversation_sessions before it's
+    cleared, so past sessions stay browsable instead of being lost."""
+    if not convo.history:
+        return
+    started_at = None
+    first_at = convo.history[0].get("at") if convo.history else None
+    if first_at:
+        started_at = datetime.fromisoformat(first_at)
+    db.session.add(ConversationSession(
+        sender=convo.sender,
+        channel=convo.channel,
+        history=convo.history,
+        started_at=started_at,
+        ended_at=convo.updated_at or _now(),
+    ))
+
+
 def ensure_fresh_session(sender):
-    """If the conversation went quiet for longer than the timeout, treat the
-    next message as a brand new session (clears AI memory, keeps agent_mode off)."""
+    """If the conversation went quiet for longer than the timeout, archive the
+    old history and start a brand new session (keeps agent_mode off)."""
     convo = Conversation.query.filter_by(sender=sender).first()
     if convo and convo.history and not is_active(convo.updated_at):
+        _archive_session(convo)
         convo.history = []
         convo.agent_mode = False
         db.session.commit()
@@ -100,9 +119,22 @@ def set_channel(sender, channel):
 def clear_conversation(sender):
     convo = Conversation.query.filter_by(sender=sender).first()
     if convo:
+        _archive_session(convo)
         convo.history = []
         convo.agent_mode = False
         db.session.commit()
+
+
+def list_sessions(sender):
+    return [
+        s.to_dict() for s in
+        ConversationSession.query.filter_by(sender=sender).order_by(ConversationSession.ended_at.desc()).all()
+    ]
+
+
+def get_session(session_id):
+    s = ConversationSession.query.get(session_id)
+    return s.to_dict() if s else None
 
 
 def list_conversations():

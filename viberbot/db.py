@@ -60,6 +60,29 @@ class Conversation(db.Model):
         }
 
 
+class ConversationSession(db.Model):
+    """Archived snapshot of a conversation's history once it times out, so the
+    live Conversation row can start a fresh session without losing the log."""
+    __tablename__ = "conversation_sessions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    sender = db.Column(db.String(128), nullable=False, index=True)
+    channel = db.Column(db.String(32), nullable=False, default="VIBER_BOT")
+    history = db.Column(db.JSON, nullable=False, default=list)
+    started_at = db.Column(db.DateTime, nullable=True)
+    ended_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "sender": self.sender,
+            "channel": self.channel,
+            "history": self.history,
+            "started_at": self.started_at.isoformat() if self.started_at else None,
+            "ended_at": self.ended_at.isoformat() if self.ended_at else None,
+        }
+
+
 class Template(db.Model):
     __tablename__ = "templates"
 

@@ -7,19 +7,25 @@ import { roleLabel } from "../utils/roles"
 export default function ConversationDetail() {
   const { sender } = useParams()
   const [history, setHistory] = useState([])
+  const [sessions, setSessions] = useState([])
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    api.getConversation(sender)
-      .then((data) => setHistory(data.history || []))
+  const load = () => {
+    Promise.all([api.getConversation(sender), api.listSessions(sender)])
+      .then(([convo, pastSessions]) => {
+        setHistory(convo.history || [])
+        setSessions(pastSessions)
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [sender])
+  }
+
+  useEffect(load, [sender])
 
   const handleReset = async () => {
     await api.resetConversation(sender)
-    setHistory([])
+    load()
   }
 
   if (loading) return <p className="page-loading">Зареждане...</p>
@@ -32,10 +38,12 @@ export default function ConversationDetail() {
       <Link to="/" className="back-link">← Всички разговори</Link>
       <div className="page-header">
         <h2>{sender}</h2>
-        <button className="secondary" onClick={handleReset}>Изчисти разговора</button>
+        <button className="secondary" onClick={handleReset}>Приключи текущата сесия</button>
       </div>
+
+      <h3>Текуща сесия</h3>
       <div className="chat-log">
-        {history.length === 0 && <p className="muted">Няма съобщения.</p>}
+        {history.length === 0 && <p className="muted">Няма съобщения в текущата сесия.</p>}
         {items.map((item, i) =>
           item.separator ? (
             <div key={item.key} className="session-separator">Нова сесия</div>
@@ -48,6 +56,34 @@ export default function ConversationDetail() {
           )
         )}
       </div>
+
+      {sessions.length > 0 && (
+        <>
+          <h3>Минали сесии ({sessions.length})</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Започната</th>
+                <th>Приключена</th>
+                <th>Съобщения</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {sessions.map((s) => (
+                <tr key={s.id}>
+                  <td>{formatTime(s.started_at)}</td>
+                  <td>{formatTime(s.ended_at)}</td>
+                  <td>{(s.history || []).length}</td>
+                  <td>
+                    <Link to={`/conversations/${encodeURIComponent(sender)}/sessions/${s.id}`}>Виж →</Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
     </div>
   )
 }

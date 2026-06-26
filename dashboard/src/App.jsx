@@ -6,6 +6,7 @@ import Login from "./pages/Login"
 import Register from "./pages/Register"
 import Conversations from "./pages/Conversations"
 import ConversationDetail from "./pages/ConversationDetail"
+import SessionDetail from "./pages/SessionDetail"
 import AgentQueue from "./pages/AgentQueue"
 import Templates from "./pages/Templates"
 import Notify from "./pages/Notify"
@@ -22,6 +23,7 @@ export default function App() {
             <Route element={<Layout />}>
               <Route path="/" element={<Conversations />} />
               <Route path="/conversations/:sender" element={<ConversationDetail />} />
+              <Route path="/conversations/:sender/sessions/:id" element={<SessionDetail />} />
               <Route path="/agent-queue" element={<AgentQueue />} />
               <Route path="/templates" element={<Templates />} />
               <Route path="/notify" element={<Notify />} />
