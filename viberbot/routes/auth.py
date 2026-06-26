@@ -1,7 +1,7 @@
 from flask import Blueprint, g, jsonify, request
 
 from viberbot.auth import require_session
-from viberbot.services.auth_service import AuthError, register, start_login, verify_otp
+from viberbot.services.auth_service import AuthError, register, start_login, update_profile, verify_otp
 
 bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -55,3 +55,20 @@ def verify_route():
 @require_session
 def me_route():
     return jsonify(g.user.to_dict()), 200
+
+
+@bp.route("/me", methods=["PUT"])
+@require_session
+def update_me_route():
+    data = request.json or {}
+    try:
+        user = update_profile(
+            g.user,
+            phone=data.get("phone"),
+            current_password=data.get("current_password"),
+            new_password=data.get("new_password"),
+        )
+    except AuthError as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+
+    return jsonify(user.to_dict()), 200

@@ -68,3 +68,16 @@ def get_user_from_token(token):
     if not session or session.expires_at < datetime.utcnow():
         return None
     return User.query.get(session.user_id)
+
+
+def update_profile(user, phone=None, current_password=None, new_password=None):
+    if new_password:
+        if not current_password or not check_password_hash(user.password_hash, current_password):
+            raise AuthError("Грешна текуща парола")
+        user.password_hash = generate_password_hash(new_password, method="pbkdf2:sha256")
+
+    if phone:
+        user.phone = phone
+
+    db.session.commit()
+    return user

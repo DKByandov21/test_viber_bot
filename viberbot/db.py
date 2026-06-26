@@ -104,9 +104,12 @@ DEFAULT_TEMPLATES = [
 
 
 def seed_default_templates():
+    """Only seeds on a completely empty table - once the user manages templates
+    (including deleting one of the defaults), redeploys must not resurrect them."""
+    if Template.query.count() > 0:
+        return
     for entry in DEFAULT_TEMPLATES:
-        if not Template.query.filter_by(key=entry["key"]).first():
-            db.session.add(Template(**entry))
+        db.session.add(Template(**entry))
     db.session.commit()
 
 

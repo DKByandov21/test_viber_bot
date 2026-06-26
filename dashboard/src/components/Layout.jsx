@@ -18,10 +18,12 @@ export default function Layout() {
     navigate("/login")
   }
 
+  const initial = user?.email?.[0]?.toUpperCase() || "?"
+
   return (
     <div className="layout">
       <aside className="sidebar">
-        <h1>Viber Bot</h1>
+        <h1><span className="logo-dot" />Viber Bot</h1>
         <nav>
           {NAV_ITEMS.map((item) => (
             <Link
@@ -34,8 +36,11 @@ export default function Layout() {
           ))}
         </nav>
         <div className="user-box">
-          <div className="user-email">{user?.email}</div>
-          <button onClick={handleLogout}>Изход</button>
+          <Link to="/settings" className={`user-row ${location.pathname === "/settings" ? "active" : ""}`}>
+            <span className="avatar">{initial}</span>
+            <span className="user-email">{user?.email}</span>
+          </Link>
+          <button className="secondary" onClick={handleLogout}>Изход</button>
         </div>
       </aside>
       <main className="content">

@@ -9,6 +9,7 @@ import ConversationDetail from "./pages/ConversationDetail"
 import AgentQueue from "./pages/AgentQueue"
 import Templates from "./pages/Templates"
 import Notify from "./pages/Notify"
+import Settings from "./pages/Settings"
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
               <Route path="/agent-queue" element={<AgentQueue />} />
               <Route path="/templates" element={<Templates />} />
               <Route path="/notify" element={<Notify />} />
+              <Route path="/settings" element={<Settings />} />
             </Route>
           </Route>
         </Routes>

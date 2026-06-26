@@ -34,6 +34,7 @@ export const authApi = {
   login: (payload) => request("/api/auth/login", { method: "POST", body: JSON.stringify(payload) }),
   verify: (payload) => request("/api/auth/verify", { method: "POST", body: JSON.stringify(payload) }),
   me: () => request("/api/auth/me"),
+  updateMe: (payload) => request("/api/auth/me", { method: "PUT", body: JSON.stringify(payload) }),
 }
 
 export const api = {

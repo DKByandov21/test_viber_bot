@@ -9,6 +9,7 @@ export default function Notify() {
   const [contextSummary, setContextSummary] = useState("")
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
+  const [sending, setSending] = useState(false)
 
   useEffect(() => {
     api.listTemplates().then(setTemplates).catch((e) => setError(e.message))
@@ -20,6 +21,7 @@ export default function Notify() {
     e.preventDefault()
     setError(null)
     setResult(null)
+    setSending(true)
     try {
       const res = await api.notify({
         to,
@@ -30,11 +32,13 @@ export default function Notify() {
       setResult(res)
     } catch (err) {
       setError(err.message)
+    } finally {
+      setSending(false)
     }
   }
 
   return (
-    <div>
+    <div className="fade-in">
       <h2>Изпрати Notify</h2>
       <form onSubmit={handleSubmit} className="form">
         <input placeholder="Телефон (напр. 359...)" value={to} onChange={(e) => setTo(e.target.value)} required />
@@ -61,7 +65,7 @@ export default function Notify() {
           onChange={(e) => setContextSummary(e.target.value)}
         />
 
-        <button type="submit">Изпрати</button>
+        <button type="submit" disabled={sending}>{sending ? "Изпраща се..." : "Изпрати"}</button>
       </form>
 
       {error && <p className="error">Грешка: {error}</p>}

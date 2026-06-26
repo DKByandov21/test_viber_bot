@@ -41,7 +41,7 @@ export default function AgentQueue() {
   }
 
   return (
-    <div>
+    <div className="fade-in">
       <div className="page-header">
         <h2>Чакащи агент</h2>
         <span className="badge">{queue.length}</span>
