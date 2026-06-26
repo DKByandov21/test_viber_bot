@@ -49,10 +49,12 @@ def _archive_session(convo):
 
 
 def ensure_fresh_session(sender):
-    """If the conversation went quiet for longer than the timeout, archive the
-    old history and start a brand new session (keeps agent_mode off)."""
+    """If the customer went quiet for longer than the timeout, archive the
+    old history and start a brand new session (keeps agent_mode off).
+    Based on the customer's own last message, not any write to the row -
+    an agent reply or system note must not reset this clock."""
     convo = Conversation.query.filter_by(sender=sender).first()
-    if convo and convo.history and not is_active(convo.updated_at):
+    if convo and convo.history and not is_active(convo.last_customer_at):
         _archive_session(convo)
         convo.history = []
         convo.agent_mode = False
@@ -62,10 +64,12 @@ def ensure_fresh_session(sender):
 def append_history(sender, user_message, assistant_reply):
     convo = _get_or_create(sender)
     history = list(convo.history or [])
-    now = _now().isoformat()
-    history.append({"role": "user", "content": user_message, "at": now})
-    history.append({"role": "assistant", "content": assistant_reply, "at": now})
+    now = _now()
+    now_iso = now.isoformat()
+    history.append({"role": "user", "content": user_message, "at": now_iso})
+    history.append({"role": "assistant", "content": assistant_reply, "at": now_iso})
     convo.history = history[-config.MAX_HISTORY_MESSAGES:]
+    convo.last_customer_at = now
     db.session.commit()
 
 
@@ -74,6 +78,7 @@ def append_user_message(sender, text):
     history = list(convo.history or [])
     history.append({"role": "user", "content": text, "at": _now().isoformat()})
     convo.history = history[-config.MAX_HISTORY_MESSAGES:]
+    convo.last_customer_at = _now()
     db.session.commit()
 
 
@@ -179,7 +184,7 @@ def get_stats():
         "agent_handled_sessions": agent_handled,
         "ai_only_sessions": ai_only,
         "agent_queue_count": sum(1 for c in conversations if c.agent_mode),
-        "active_now": sum(1 for c in conversations if is_active(c.updated_at)),
+        "active_now": sum(1 for c in conversations if is_active(c.last_customer_at)),
     }
 
 

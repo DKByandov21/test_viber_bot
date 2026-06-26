@@ -37,6 +37,7 @@ def parse_inbound_message(msg):
 
 def handle_button_reply(sender, channel, payload):
     state.set_channel(sender, channel)
+    state.ensure_fresh_session(sender)
 
     if payload == "CONTACT_AGENT":
         state.set_agent_mode(sender, True)

@@ -46,6 +46,7 @@ class Conversation(db.Model):
     history = db.Column(db.JSON, nullable=False, default=list)
     agent_mode = db.Column(db.Boolean, nullable=False, default=False)
     channel = db.Column(db.String(32), nullable=False, default="VIBER_BOT")
+    last_customer_at = db.Column(db.DateTime, nullable=True)
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
 
     def to_dict(self):
@@ -57,7 +58,8 @@ class Conversation(db.Model):
             "agent_mode": self.agent_mode,
             "channel": self.channel,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "is_active": is_active(self.updated_at),
+            "last_customer_at": self.last_customer_at.isoformat() if self.last_customer_at else None,
+            "is_active": is_active(self.last_customer_at),
         }
 
 
@@ -164,6 +166,12 @@ def init_db(app):
                 ))
                 conn.execute(db.text(
                     "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(16) NOT NULL DEFAULT 'agent'"
+                ))
+                conn.execute(db.text(
+                    "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS last_customer_at TIMESTAMP"
+                ))
+                conn.execute(db.text(
+                    "UPDATE conversations SET last_customer_at = updated_at WHERE last_customer_at IS NULL"
                 ))
                 conn.commit()
             seed_default_templates()
