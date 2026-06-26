@@ -55,3 +55,31 @@ export const api = {
   updateUserRole: (id, role) => request(`/api/users/${id}`, { method: "PUT", body: JSON.stringify({ role }) }),
   deleteUser: (id) => request(`/api/users/${id}`, { method: "DELETE" }),
 }
+
+export const projectsApi = {
+  list: () => request("/api/projects"),
+  get: (id) => request(`/api/projects/${id}`),
+  create: (payload) => request("/api/projects", { method: "POST", body: JSON.stringify(payload) }),
+  update: (id, payload) => request(`/api/projects/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  remove: (id) => request(`/api/projects/${id}`, { method: "DELETE" }),
+
+  listSprints: (projectId) => request(`/api/projects/${projectId}/sprints`),
+  createSprint: (projectId, payload) => request(`/api/projects/${projectId}/sprints`, { method: "POST", body: JSON.stringify(payload) }),
+  updateSprint: (id, payload) => request(`/api/sprints/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  removeSprint: (id) => request(`/api/sprints/${id}`, { method: "DELETE" }),
+
+  listTasks: (params = {}) => {
+    const query = new URLSearchParams(params).toString()
+    return request(`/api/tasks${query ? `?${query}` : ""}`)
+  },
+  triage: () => request("/api/triage"),
+  createTask: (payload) => request("/api/tasks", { method: "POST", body: JSON.stringify(payload) }),
+  updateTask: (id, payload) => request(`/api/tasks/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  removeTask: (id) => request(`/api/tasks/${id}`, { method: "DELETE" }),
+
+  listDocs: (projectId) => request(`/api/projects/${projectId}/docs`),
+  getDoc: (id) => request(`/api/docs/${id}`),
+  createDoc: (projectId, payload) => request(`/api/projects/${projectId}/docs`, { method: "POST", body: JSON.stringify(payload) }),
+  updateDoc: (id, payload) => request(`/api/docs/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  removeDoc: (id) => request(`/api/docs/${id}`, { method: "DELETE" }),
+}

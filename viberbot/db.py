@@ -86,6 +86,102 @@ class ConversationSession(db.Model):
         }
 
 
+class Project(db.Model):
+    __tablename__ = "projects"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class Sprint(db.Model):
+    __tablename__ = "sprints"
+
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id"), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    start_date = db.Column(db.Date, nullable=True)
+    end_date = db.Column(db.Date, nullable=True)
+    status = db.Column(db.String(16), nullable=False, default="planned")  # planned, active, completed
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "project_id": self.project_id,
+            "name": self.name,
+            "start_date": self.start_date.isoformat() if self.start_date else None,
+            "end_date": self.end_date.isoformat() if self.end_date else None,
+            "status": self.status,
+        }
+
+
+TASK_STATUSES = ["triage", "backlog", "todo", "in_progress", "done", "cancelled"]
+TASK_PRIORITIES = ["none", "low", "medium", "high", "urgent"]
+
+
+class Task(db.Model):
+    __tablename__ = "tasks"
+
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id"), nullable=True)
+    sprint_id = db.Column(db.Integer, db.ForeignKey("sprints.id"), nullable=True)
+    title = db.Column(db.String(500), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(16), nullable=False, default="triage")
+    priority = db.Column(db.String(16), nullable=False, default="none")
+    assignee_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+
+    def to_dict(self):
+        assignee = User.query.get(self.assignee_id) if self.assignee_id else None
+        return {
+            "id": self.id,
+            "project_id": self.project_id,
+            "sprint_id": self.sprint_id,
+            "title": self.title,
+            "description": self.description,
+            "status": self.status,
+            "priority": self.priority,
+            "assignee_id": self.assignee_id,
+            "assignee_email": assignee.email if assignee else None,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class Doc(db.Model):
+    __tablename__ = "docs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id"), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    content = db.Column(db.Text, nullable=False, default="")
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "project_id": self.project_id,
+            "title": self.title,
+            "content": self.content,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
 class Template(db.Model):
     __tablename__ = "templates"
 

@@ -14,6 +14,9 @@ import Notify from "./pages/Notify"
 import Settings from "./pages/Settings"
 import Users from "./pages/Users"
 import Analytics from "./pages/Analytics"
+import Projects from "./pages/Projects"
+import ProjectDetail from "./pages/ProjectDetail"
+import Triage from "./pages/Triage"
 
 export default function App() {
   return (
@@ -29,6 +32,9 @@ export default function App() {
               <Route path="/conversations/:sender/sessions/:id" element={<SessionDetail />} />
               <Route path="/agent-queue" element={<AgentQueue />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/projects/:id" element={<ProjectDetail />} />
+              <Route path="/triage" element={<Triage />} />
               <Route element={<AdminRoute />}>
                 <Route path="/templates" element={<Templates />} />
                 <Route path="/notify" element={<Notify />} />
