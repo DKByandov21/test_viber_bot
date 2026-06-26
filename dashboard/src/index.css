@@ -24,11 +24,47 @@ body {
   position: sticky;
   top: 0;
   height: 100vh;
+  flex-shrink: 0;
+  transition: width 0.2s ease, padding 0.2s ease;
+  overflow: hidden;
+}
+
+.sidebar.collapsed {
+  width: 72px;
+  padding: 24px 12px;
+}
+
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
 }
 
 .sidebar h1 {
   font-size: 18px;
-  margin-bottom: 24px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.collapse-btn {
+  background: transparent;
+  color: #c9c9d8;
+  border: 1px solid #34344a;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.collapse-btn:hover {
+  background: #2a2a40;
+  color: #fff;
 }
 
 .sidebar nav {
@@ -44,6 +80,9 @@ body {
   border-radius: 8px;
   font-size: 14px;
   transition: background 0.15s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
 }
 
 .sidebar nav a:hover {
@@ -57,7 +96,23 @@ body {
 }
 
 .nav-icon {
-  margin-right: 6px;
+  margin-right: 8px;
+}
+
+.sidebar.collapsed .nav-icon {
+  margin-right: 0;
+}
+
+.sidebar.collapsed nav a {
+  justify-content: center;
+}
+
+.sidebar.collapsed .user-row {
+  justify-content: center;
+}
+
+.sidebar.collapsed .user-box button {
+  width: 100%;
 }
 
 .user-box {
