@@ -20,7 +20,8 @@ def ask_groq(sender, user_message):
         user_content = user_message
 
     history = state.get_history(sender)
-    messages = [{"role": "system", "content": config.SYSTEM_PROMPT}] + history + [{"role": "user", "content": user_content}]
+    clean_history = [{"role": m["role"], "content": m["content"]} for m in history]
+    messages = [{"role": "system", "content": config.SYSTEM_PROMPT}] + clean_history + [{"role": "user", "content": user_content}]
 
     payload = {
         "model": config.GROQ_MODEL,
