@@ -44,6 +44,7 @@ class Conversation(db.Model):
     sender = db.Column(db.String(128), unique=True, nullable=False, index=True)
     history = db.Column(db.JSON, nullable=False, default=list)
     agent_mode = db.Column(db.Boolean, nullable=False, default=False)
+    channel = db.Column(db.String(32), nullable=False, default="VIBER_BOT")
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
 
     def to_dict(self):
@@ -53,6 +54,7 @@ class Conversation(db.Model):
             "sender": self.sender,
             "history": self.history,
             "agent_mode": self.agent_mode,
+            "channel": self.channel,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
             "is_active": is_active(self.updated_at),
         }
@@ -121,6 +123,11 @@ def init_db(app):
     try:
         with app.app_context():
             db.create_all()
+            with db.engine.connect() as conn:
+                conn.execute(db.text(
+                    "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS channel VARCHAR(32) NOT NULL DEFAULT 'VIBER_BOT'"
+                ))
+                conn.commit()
             seed_default_templates()
     except Exception as e:
         print(f"DB initialization failed, continuing without it: {e}")

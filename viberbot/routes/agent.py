@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 
 from viberbot.auth import require_session
 from viberbot.services import state
-from viberbot.services.infobip_client import send_viber_bot_message
+from viberbot.services.infobip_client import reply_on_same_channel
 
 bp = Blueprint("agent", __name__)
 
@@ -18,7 +18,17 @@ def agent_reply():
     if not to or not text:
         return jsonify({"status": "error", "message": "'to' and 'text' are required"}), 400
 
-    state.set_agent_mode(to, not release_agent_mode)
+    channel = state.get_channel(to)
 
-    status = send_viber_bot_message(to, text)
+    status = reply_on_same_channel(channel, to, text)
+    state.append_agent_message(to, text)
+
+    if release_agent_mode:
+        state.set_agent_mode(to, False)
+        notice = "Вече си обратно при AI асистента - можеш да продължиш да задаваш въпроси."
+        reply_on_same_channel(channel, to, notice)
+        state.append_assistant_note(to, notice)
+    else:
+        state.set_agent_mode(to, True)
+
     return jsonify({"status": "sent", "infobip_status": status}), 200

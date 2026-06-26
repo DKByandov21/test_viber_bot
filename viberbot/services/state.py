@@ -66,6 +66,14 @@ def append_assistant_note(sender, content):
     db.session.commit()
 
 
+def append_agent_message(sender, content):
+    convo = _get_or_create(sender)
+    history = list(convo.history or [])
+    history.append({"role": "agent", "content": content, "at": _now().isoformat()})
+    convo.history = history[-config.MAX_HISTORY_MESSAGES:]
+    db.session.commit()
+
+
 def is_agent_mode(sender):
     convo = Conversation.query.filter_by(sender=sender).first()
     return bool(convo and convo.agent_mode)
@@ -75,6 +83,18 @@ def set_agent_mode(sender, enabled):
     convo = _get_or_create(sender)
     convo.agent_mode = enabled
     db.session.commit()
+
+
+def get_channel(sender):
+    convo = Conversation.query.filter_by(sender=sender).first()
+    return convo.channel if convo else "VIBER_BOT"
+
+
+def set_channel(sender, channel):
+    convo = _get_or_create(sender)
+    if convo.channel != channel:
+        convo.channel = channel
+        db.session.commit()
 
 
 def clear_conversation(sender):

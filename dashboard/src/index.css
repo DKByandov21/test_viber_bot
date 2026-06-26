@@ -274,11 +274,29 @@ button.secondary:hover {
   align-self: flex-start;
 }
 
+.bubble.agent {
+  align-self: flex-start;
+  background: #e3f9ec;
+  border: 1px solid #b8e8cc;
+}
+
 .bubble strong {
   display: block;
   font-size: 11px;
   opacity: 0.7;
   text-transform: uppercase;
+}
+
+.session-separator {
+  align-self: center;
+  font-size: 11px;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 6px 0;
+  padding: 4px 12px;
+  border-top: 1px dashed #ddd;
+  border-bottom: 1px dashed #ddd;
 }
 
 .agent-card {

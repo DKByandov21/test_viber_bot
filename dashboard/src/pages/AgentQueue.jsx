@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { api } from "../api"
-import { timeAgo } from "../utils/time"
+import { timeAgo, withSessionBreaks } from "../utils/time"
+import { roleLabel } from "../utils/roles"
 
 const POLL_INTERVAL_MS = 8000
 
@@ -20,13 +21,17 @@ function AgentCard({ conversation, replyValue, sending, onChangeReply, onReply }
         <span className="muted">{timeAgo(conversation.updated_at)}</span>
       </div>
       <div className="chat-log scrollable" ref={logRef}>
-        {(conversation.history || []).map((msg, i) => (
-          <div key={i} className={`bubble ${msg.role}`}>
-            <strong>{msg.role === "user" ? "Клиент" : "Бот"}</strong>
-            <p>{msg.content}</p>
-            {msg.at && <span className="bubble-time">{timeAgo(msg.at)}</span>}
-          </div>
-        ))}
+        {withSessionBreaks(conversation.history || []).map((item, i) =>
+          item.separator ? (
+            <div key={item.key} className="session-separator">Нова сесия</div>
+          ) : (
+            <div key={i} className={`bubble ${item.role}`}>
+              <strong>{roleLabel(item.role)}</strong>
+              <p>{item.content}</p>
+              {item.at && <span className="bubble-time">{timeAgo(item.at)}</span>}
+            </div>
+          )
+        )}
       </div>
       <textarea
         value={replyValue || ""}

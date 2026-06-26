@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { api } from "../api"
-import { formatTime } from "../utils/time"
+import { formatTime, withSessionBreaks } from "../utils/time"
+import { roleLabel } from "../utils/roles"
 
 export default function ConversationDetail() {
   const { sender } = useParams()
@@ -24,6 +25,8 @@ export default function ConversationDetail() {
   if (loading) return <p className="page-loading">Зареждане...</p>
   if (error) return <p className="error">Грешка: {error}</p>
 
+  const items = withSessionBreaks(history)
+
   return (
     <div className="fade-in">
       <Link to="/" className="back-link">← Всички разговори</Link>
@@ -33,13 +36,17 @@ export default function ConversationDetail() {
       </div>
       <div className="chat-log">
         {history.length === 0 && <p className="muted">Няма съобщения.</p>}
-        {history.map((msg, i) => (
-          <div key={i} className={`bubble ${msg.role}`}>
-            <strong>{msg.role === "user" ? "Клиент" : "Бот"}</strong>
-            <p>{msg.content}</p>
-            {msg.at && <span className="bubble-time">{formatTime(msg.at)}</span>}
-          </div>
-        ))}
+        {items.map((item, i) =>
+          item.separator ? (
+            <div key={item.key} className="session-separator">Нова сесия</div>
+          ) : (
+            <div key={i} className={`bubble ${item.role}`}>
+              <strong>{roleLabel(item.role)}</strong>
+              <p>{item.content}</p>
+              {item.at && <span className="bubble-time">{formatTime(item.at)}</span>}
+            </div>
+          )
+        )}
       </div>
     </div>
   )

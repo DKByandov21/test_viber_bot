@@ -23,3 +23,23 @@ export function timeAgo(isoString) {
   const days = Math.floor(hours / 24)
   return `преди ${days} дни`
 }
+
+const SESSION_GAP_MINUTES = 3
+
+export function withSessionBreaks(history) {
+  const items = []
+  let previousAt = null
+
+  for (const msg of history) {
+    if (previousAt && msg.at) {
+      const gapMinutes = (new Date(msg.at).getTime() - new Date(previousAt).getTime()) / 60000
+      if (gapMinutes > SESSION_GAP_MINUTES) {
+        items.push({ separator: true, key: `sep-${msg.at}` })
+      }
+    }
+    items.push(msg)
+    if (msg.at) previousAt = msg.at
+  }
+
+  return items
+}

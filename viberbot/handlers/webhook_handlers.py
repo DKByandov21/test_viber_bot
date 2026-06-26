@@ -36,6 +36,8 @@ def parse_inbound_message(msg):
 
 
 def handle_button_reply(sender, channel, payload):
+    state.set_channel(sender, channel)
+
     if payload == "CONTACT_AGENT":
         state.set_agent_mode(sender, True)
         send_sms_notification(config.AGENT_NOTIFY_PHONE, f"Клиент {sender} иска да говори с агент във Viber бота.")
@@ -48,6 +50,7 @@ def handle_button_reply(sender, channel, payload):
 
 
 def handle_text_message(sender, channel, text):
+    state.set_channel(sender, channel)
     state.ensure_fresh_session(sender)
 
     if state.is_agent_mode(sender):
