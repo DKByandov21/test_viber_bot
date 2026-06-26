@@ -51,7 +51,11 @@ def handle_text_message(sender, channel, text):
     state.ensure_fresh_session(sender)
 
     if state.is_agent_mode(sender):
-        reply_on_same_channel(channel, sender, "Агентът е известен и ще ти отговори скоро.")
+        # Customer already got the "we're connecting you" notice when they
+        # hit Contact Agent - just log what they say so the agent sees it,
+        # no need to repeat the notice on every message.
+        state.append_user_message(sender, text)
         return
+
     ai_reply = ask_groq(sender, text)
     reply_on_same_channel(channel, sender, ai_reply)

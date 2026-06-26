@@ -50,6 +50,14 @@ def append_history(sender, user_message, assistant_reply):
     db.session.commit()
 
 
+def append_user_message(sender, text):
+    convo = _get_or_create(sender)
+    history = list(convo.history or [])
+    history.append({"role": "user", "content": text, "at": _now().isoformat()})
+    convo.history = history[-config.MAX_HISTORY_MESSAGES:]
+    db.session.commit()
+
+
 def append_assistant_note(sender, content):
     convo = _get_or_create(sender)
     history = list(convo.history or [])

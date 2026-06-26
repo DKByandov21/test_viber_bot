@@ -1,8 +1,49 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { api } from "../api"
 import { timeAgo } from "../utils/time"
 
 const POLL_INTERVAL_MS = 8000
+
+function AgentCard({ conversation, replyValue, sending, onChangeReply, onReply }) {
+  const logRef = useRef(null)
+
+  useEffect(() => {
+    if (logRef.current) {
+      logRef.current.scrollTop = logRef.current.scrollHeight
+    }
+  }, [conversation.history])
+
+  return (
+    <div className="agent-card">
+      <div className="agent-card-header">
+        <h3>{conversation.sender}</h3>
+        <span className="muted">{timeAgo(conversation.updated_at)}</span>
+      </div>
+      <div className="chat-log scrollable" ref={logRef}>
+        {(conversation.history || []).map((msg, i) => (
+          <div key={i} className={`bubble ${msg.role}`}>
+            <strong>{msg.role === "user" ? "Клиент" : "Бот"}</strong>
+            <p>{msg.content}</p>
+            {msg.at && <span className="bubble-time">{timeAgo(msg.at)}</span>}
+          </div>
+        ))}
+      </div>
+      <textarea
+        value={replyValue || ""}
+        onChange={(e) => onChangeReply(e.target.value)}
+        placeholder="Отговор до клиента..."
+      />
+      <div className="actions">
+        <button disabled={sending} onClick={() => onReply(false)}>
+          Изпрати
+        </button>
+        <button className="secondary" disabled={sending} onClick={() => onReply(true)}>
+          Изпрати и върни на AI
+        </button>
+      </div>
+    </div>
+  )
+}
 
 export default function AgentQueue() {
   const [queue, setQueue] = useState([])
@@ -58,34 +99,14 @@ export default function AgentQueue() {
       )}
 
       {queue.map((c) => (
-        <div key={c.sender} className="agent-card">
-          <div className="agent-card-header">
-            <h3>{c.sender}</h3>
-            <span className="muted">{timeAgo(c.updated_at)}</span>
-          </div>
-          <div className="chat-log small">
-            {(c.history || []).slice(-4).map((msg, i) => (
-              <div key={i} className={`bubble ${msg.role}`}>
-                <strong>{msg.role === "user" ? "Клиент" : "Бот"}</strong>
-                <p>{msg.content}</p>
-                {msg.at && <span className="bubble-time">{timeAgo(msg.at)}</span>}
-              </div>
-            ))}
-          </div>
-          <textarea
-            value={replyText[c.sender] || ""}
-            onChange={(e) => setReplyText((prev) => ({ ...prev, [c.sender]: e.target.value }))}
-            placeholder="Отговор до клиента..."
-          />
-          <div className="actions">
-            <button disabled={sending === c.sender} onClick={() => handleReply(c.sender, false)}>
-              Изпрати
-            </button>
-            <button className="secondary" disabled={sending === c.sender} onClick={() => handleReply(c.sender, true)}>
-              Изпрати и върни на AI
-            </button>
-          </div>
-        </div>
+        <AgentCard
+          key={c.sender}
+          conversation={c}
+          replyValue={replyText[c.sender]}
+          sending={sending === c.sender}
+          onChangeReply={(value) => setReplyText((prev) => ({ ...prev, [c.sender]: value }))}
+          onReply={(release) => handleReply(c.sender, release)}
+        />
       ))}
     </div>
   )

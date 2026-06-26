@@ -251,8 +251,9 @@ button.secondary:hover {
   margin: 16px 0;
 }
 
-.chat-log.small {
-  max-height: 200px;
+.chat-log.small,
+.chat-log.scrollable {
+  max-height: 320px;
   overflow-y: auto;
 }
 
