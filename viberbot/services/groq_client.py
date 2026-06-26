@@ -20,7 +20,12 @@ def ask_groq(sender, user_message):
         user_content = user_message
 
     history = state.get_history(sender)
-    clean_history = [{"role": m["role"], "content": m["content"]} for m in history]
+    # Groq's API only accepts system/user/assistant roles - "agent" (a human
+    # support agent's message) gets relabeled as assistant for the AI's context.
+    clean_history = [
+        {"role": "assistant" if m["role"] == "agent" else m["role"], "content": m["content"]}
+        for m in history
+    ]
     messages = [{"role": "system", "content": config.SYSTEM_PROMPT}] + clean_history + [{"role": "user", "content": user_content}]
 
     payload = {
