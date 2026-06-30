@@ -1,6 +1,26 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { api } from "../api"
-import { dateRange, formatDateDMY } from "../utils/time"
+import { dateRange, formatDateDMY, parseDateDMY } from "../utils/time"
+
+function findDateParams(rawText) {
+  try {
+    const parsed = JSON.parse(rawText)
+    const containers = ["body", "parameters"]
+    const found = []
+    for (const container of containers) {
+      const obj = parsed?.content?.[container]
+      if (obj && typeof obj === "object") {
+        for (const key of Object.keys(obj)) {
+          if (key === "type") continue
+          found.push({ container, key })
+        }
+      }
+    }
+    return found
+  } catch {
+    return []
+  }
+}
 
 const RAW_PLACEHOLDER = `{
   "channel": "VIBER_BM",
@@ -93,16 +113,16 @@ function RawJsonForm() {
   const [raw, setRaw] = useState(RAW_PLACEHOLDER)
   const [repeat, setRepeat] = useState(1)
   const [dateMode, setDateMode] = useState(false)
-  const [startDate, setStartDate] = useState("")
-  const [endDate, setEndDate] = useState("")
+  const [dateParam, setDateParam] = useState("")
+  const [startDateText, setStartDateText] = useState("")
+  const [endDateText, setEndDateText] = useState("")
   const [results, setResults] = useState([])
   const [error, setError] = useState(null)
   const [sending, setSending] = useState(false)
 
-  const sendOne = async (rawText) => {
-    const message = JSON.parse(rawText)
-    return api.notifyRaw(message)
-  }
+  const dateParamOptions = useMemo(() => findDateParams(raw), [raw])
+
+  const sendOne = async (message) => api.notifyRaw(message)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -110,27 +130,46 @@ function RawJsonForm() {
     setResults([])
 
     if (dateMode) {
-      if (!startDate || !endDate) {
-        setError("Избери начална и крайна дата")
+      if (!dateParam) {
+        setError("Избери кой параметър да варира по дата")
         return
       }
-      if (!raw.includes("{{DATE}}")) {
-        setError('Сложи плейсхолдъра {{DATE}} някъде в JSON-а (напр. като стойност на p2)')
+      const start = parseDateDMY(startDateText)
+      const end = parseDateDMY(endDateText)
+      if (!start || !end) {
+        setError("Датите трябва да са във формат ДД.ММ.ГГГГ")
         return
       }
-      const dates = dateRange(startDate, endDate)
+      if (start > end) {
+        setError("Началната дата трябва да е преди крайната")
+        return
+      }
+
+      const dates = dateRange(start, end)
       if (dates.length > 60) {
         setError("Диапазонът е твърде голям (макс. 60 дни)")
         return
       }
+
+      let baseMessage
+      try {
+        baseMessage = JSON.parse(raw)
+      } catch {
+        setError("Невалиден JSON")
+        return
+      }
+
+      const [container, key] = dateParam.split(".")
 
       setSending(true)
       try {
         const collected = []
         for (const d of dates) {
           const formatted = formatDateDMY(d)
+          const message = JSON.parse(JSON.stringify(baseMessage))
+          message.content[container][key] = formatted
           try {
-            const res = await sendOne(raw.replaceAll("{{DATE}}", formatted))
+            const res = await sendOne(message)
             collected.push({ date: formatted, ...res })
           } catch (err) {
             collected.push({ date: formatted, status: "error", message: err.message })
@@ -143,8 +182,9 @@ function RawJsonForm() {
       return
     }
 
+    let message
     try {
-      JSON.parse(raw)
+      message = JSON.parse(raw)
     } catch {
       setError("Невалиден JSON")
       return
@@ -157,7 +197,7 @@ function RawJsonForm() {
       const collected = []
       for (let i = 0; i < count; i++) {
         try {
-          const res = await sendOne(raw)
+          const res = await sendOne(message)
           collected.push({ attempt: i + 1, ...res })
         } catch (err) {
           collected.push({ attempt: i + 1, status: "error", message: err.message })
@@ -185,16 +225,25 @@ function RawJsonForm() {
 
         <label>
           <input type="checkbox" checked={dateMode} onChange={(e) => setDateMode(e.target.checked)} style={{ width: "auto", marginRight: 6 }} />
-          Debug по дати (изпрати веднъж на ден за диапазон)
+          Debug по дати (изпраща по едно съобщение веднага за всяка дата от диапазона)
         </label>
 
         {dateMode ? (
           <>
-            <p className="muted">Сложи <code>{"{{DATE}}"}</code> в JSON-а където да отиде датата (формат 12.02.2026).</p>
-            <label>От дата</label>
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            <label>До дата</label>
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            <label>Параметър, който да варира по дата</label>
+            <select value={dateParam} onChange={(e) => setDateParam(e.target.value)}>
+              <option value="">-- избери параметър --</option>
+              {dateParamOptions.map((opt) => (
+                <option key={`${opt.container}.${opt.key}`} value={`${opt.container}.${opt.key}`}>
+                  {opt.container}.{opt.key}
+                </option>
+              ))}
+            </select>
+
+            <label>От дата (ДД.ММ.ГГГГ)</label>
+            <input placeholder="12.02.2026" value={startDateText} onChange={(e) => setStartDateText(e.target.value)} />
+            <label>До дата (ДД.ММ.ГГГГ)</label>
+            <input placeholder="24.02.2026" value={endDateText} onChange={(e) => setEndDateText(e.target.value)} />
           </>
         ) : (
           <>

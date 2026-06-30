@@ -31,15 +31,26 @@ export function formatDateDMY(date) {
   return `${d}.${m}.${y}`
 }
 
-export function dateRange(startISO, endISO) {
+export function dateRange(start, end) {
   const dates = []
-  const current = new Date(`${startISO}T00:00:00`)
-  const end = new Date(`${endISO}T00:00:00`)
-  while (current <= end) {
+  const current = new Date(start)
+  const last = new Date(end)
+  while (current <= last) {
     dates.push(new Date(current))
     current.setDate(current.getDate() + 1)
   }
   return dates
+}
+
+const DMY_PATTERN = /^(\d{2})\.(\d{2})\.(\d{4})$/
+
+export function parseDateDMY(text) {
+  const match = DMY_PATTERN.exec((text || "").trim())
+  if (!match) return null
+  const [, day, month, year] = match
+  const date = new Date(Number(year), Number(month) - 1, Number(day))
+  if (date.getMonth() !== Number(month) - 1) return null
+  return date
 }
 
 const SESSION_GAP_MINUTES = 3
