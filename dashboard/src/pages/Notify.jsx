@@ -2,17 +2,17 @@ import { useEffect, useState } from "react"
 import { api } from "../api"
 
 const RAW_PLACEHOLDER = `{
-  "sender": "tPlay",
-  "destinations": [{"to": "359889303693", "messageId": "6568e6fc-8fd1-404d-8f36-5a70998090af"}],
+  "channel": "VIBER_BM",
+  "sender": "TCP",
+  "destinations": [{"to": "359876888400"}],
+  "template": {"templateName": "110d2698-1ea9-4b9b-b9e1-2ec38afa008f", "language": "bg"},
   "content": {
-    "type": "TEMPLATE",
-    "templateId": "e17a5323-3114-4597-a949-17d4b80917d8",
-    "language": "bg",
-    "parameters": {"p1": "50100000001", "p2": "15.07.2026", "p3": "Александър Табаков"}
-  },
-  "options": {
-    "validityPeriod": {"amount": 1800, "timeUnit": "SECONDS"},
-    "smsFailover": {"sender": "1970", "text": "Tova e SMS"}
+    "body": {
+      "type": "TEXT",
+      "p1": "50100000001",
+      "p2": "15.07.2026",
+      "p3": "Александър Табаков"
+    }
   }
 }`
 
