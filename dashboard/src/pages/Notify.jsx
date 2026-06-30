@@ -90,14 +90,15 @@ function TemplateForm() {
 
 function RawJsonForm() {
   const [raw, setRaw] = useState(RAW_PLACEHOLDER)
-  const [result, setResult] = useState(null)
+  const [repeat, setRepeat] = useState(1)
+  const [results, setResults] = useState([])
   const [error, setError] = useState(null)
   const [sending, setSending] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
-    setResult(null)
+    setResults([])
 
     let message
     try {
@@ -107,12 +108,20 @@ function RawJsonForm() {
       return
     }
 
+    const count = Math.max(1, Math.min(50, parseInt(repeat, 10) || 1))
+
     setSending(true)
     try {
-      const res = await api.notifyRaw(message)
-      setResult(res)
-    } catch (err) {
-      setError(err.message)
+      const collected = []
+      for (let i = 0; i < count; i++) {
+        try {
+          const res = await api.notifyRaw(message)
+          collected.push({ attempt: i + 1, ...res })
+        } catch (err) {
+          collected.push({ attempt: i + 1, status: "error", message: err.message })
+        }
+        setResults([...collected])
+      }
     } finally {
       setSending(false)
     }
@@ -123,6 +132,7 @@ function RawJsonForm() {
       <form onSubmit={handleSubmit} className="form">
         <p className="muted">
           Постави пълния JSON на едно съобщение (без "messages" wrapper-а) — изпраща се директно към Infobip Messages API.
+          За няколко получателя добави повече записи в "destinations".
         </p>
         <textarea
           value={raw}
@@ -130,11 +140,15 @@ function RawJsonForm() {
           className="doc-editor"
           spellCheck={false}
         />
-        <button type="submit" disabled={sending}>{sending ? "Изпраща се..." : "Изпрати raw"}</button>
+        <label>Брой повторения (1-50)</label>
+        <input type="number" min={1} max={50} value={repeat} onChange={(e) => setRepeat(e.target.value)} />
+        <button type="submit" disabled={sending}>{sending ? "Изпраща се..." : repeat > 1 ? `Изпрати ${repeat} пъти` : "Изпрати raw"}</button>
       </form>
 
       {error && <p className="error">Грешка: {error}</p>}
-      {result && <pre className="result">{JSON.stringify(result, null, 2)}</pre>}
+      {results.length > 0 && (
+        <pre className="result">{JSON.stringify(results, null, 2)}</pre>
+      )}
     </>
   )
 }
