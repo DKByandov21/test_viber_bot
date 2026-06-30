@@ -57,6 +57,23 @@ def send_sms_notification(to, text):
     return response.status_code
 
 
+def send_raw_message(message):
+    """Sends a single message object exactly as given to the Messages API,
+    for channels/content schemas we don't have a dedicated helper for yet
+    (e.g. RCS/WhatsApp/SMS templates with custom 'content' shapes)."""
+    url = f"https://{config.INFOBIP_BASE_URL}/messages-api/1/messages"
+    headers = {
+        "Authorization": f"App {config.INFOBIP_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {"messages": [message]}
+    print(f"Sending raw message: {message}")
+    response = requests.post(url, headers=headers, json=payload)
+    print(f"Raw send status: {response.status_code}")
+    print(f"Raw send response: {response.text}")
+    return response.status_code, response.text
+
+
 def send_template_notification(to, template_name, language, placeholders=None):
     url = f"https://{config.INFOBIP_BASE_URL}/messages-api/1/messages"
     headers = {

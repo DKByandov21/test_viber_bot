@@ -49,6 +49,7 @@ export const api = {
   updateTemplate: (key, payload) => request(`/api/templates/${encodeURIComponent(key)}`, { method: "PUT", body: JSON.stringify(payload) }),
   deleteTemplate: (key) => request(`/api/templates/${encodeURIComponent(key)}`, { method: "DELETE" }),
   notify: (payload) => request("/notify", { method: "POST", body: JSON.stringify(payload) }),
+  notifyRaw: (message) => request("/notify/raw", { method: "POST", body: JSON.stringify(message) }),
   agentReply: (payload) => request("/agent-reply", { method: "POST", body: JSON.stringify(payload) }),
   stats: () => request("/api/stats"),
   listUsers: () => request("/api/users"),
