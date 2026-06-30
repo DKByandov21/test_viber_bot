@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { api } from "../api"
+import { dateRange, formatDateDMY } from "../utils/time"
 
 const RAW_PLACEHOLDER = `{
   "channel": "VIBER_BM",
@@ -91,18 +92,59 @@ function TemplateForm() {
 function RawJsonForm() {
   const [raw, setRaw] = useState(RAW_PLACEHOLDER)
   const [repeat, setRepeat] = useState(1)
+  const [dateMode, setDateMode] = useState(false)
+  const [startDate, setStartDate] = useState("")
+  const [endDate, setEndDate] = useState("")
   const [results, setResults] = useState([])
   const [error, setError] = useState(null)
   const [sending, setSending] = useState(false)
+
+  const sendOne = async (rawText) => {
+    const message = JSON.parse(rawText)
+    return api.notifyRaw(message)
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
     setResults([])
 
-    let message
+    if (dateMode) {
+      if (!startDate || !endDate) {
+        setError("Избери начална и крайна дата")
+        return
+      }
+      if (!raw.includes("{{DATE}}")) {
+        setError('Сложи плейсхолдъра {{DATE}} някъде в JSON-а (напр. като стойност на p2)')
+        return
+      }
+      const dates = dateRange(startDate, endDate)
+      if (dates.length > 60) {
+        setError("Диапазонът е твърде голям (макс. 60 дни)")
+        return
+      }
+
+      setSending(true)
+      try {
+        const collected = []
+        for (const d of dates) {
+          const formatted = formatDateDMY(d)
+          try {
+            const res = await sendOne(raw.replaceAll("{{DATE}}", formatted))
+            collected.push({ date: formatted, ...res })
+          } catch (err) {
+            collected.push({ date: formatted, status: "error", message: err.message })
+          }
+          setResults([...collected])
+        }
+      } finally {
+        setSending(false)
+      }
+      return
+    }
+
     try {
-      message = JSON.parse(raw)
+      JSON.parse(raw)
     } catch {
       setError("Невалиден JSON")
       return
@@ -115,7 +157,7 @@ function RawJsonForm() {
       const collected = []
       for (let i = 0; i < count; i++) {
         try {
-          const res = await api.notifyRaw(message)
+          const res = await sendOne(raw)
           collected.push({ attempt: i + 1, ...res })
         } catch (err) {
           collected.push({ attempt: i + 1, status: "error", message: err.message })
@@ -140,9 +182,30 @@ function RawJsonForm() {
           className="doc-editor"
           spellCheck={false}
         />
-        <label>Брой повторения (1-50)</label>
-        <input type="number" min={1} max={50} value={repeat} onChange={(e) => setRepeat(e.target.value)} />
-        <button type="submit" disabled={sending}>{sending ? "Изпраща се..." : repeat > 1 ? `Изпрати ${repeat} пъти` : "Изпрати raw"}</button>
+
+        <label>
+          <input type="checkbox" checked={dateMode} onChange={(e) => setDateMode(e.target.checked)} style={{ width: "auto", marginRight: 6 }} />
+          Debug по дати (изпрати веднъж на ден за диапазон)
+        </label>
+
+        {dateMode ? (
+          <>
+            <p className="muted">Сложи <code>{"{{DATE}}"}</code> в JSON-а където да отиде датата (формат 12.02.2026).</p>
+            <label>От дата</label>
+            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            <label>До дата</label>
+            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          </>
+        ) : (
+          <>
+            <label>Брой повторения (1-50)</label>
+            <input type="number" min={1} max={50} value={repeat} onChange={(e) => setRepeat(e.target.value)} />
+          </>
+        )}
+
+        <button type="submit" disabled={sending}>
+          {sending ? "Изпраща се..." : dateMode ? "Изпрати по дати" : repeat > 1 ? `Изпрати ${repeat} пъти` : "Изпрати raw"}
+        </button>
       </form>
 
       {error && <p className="error">Грешка: {error}</p>}

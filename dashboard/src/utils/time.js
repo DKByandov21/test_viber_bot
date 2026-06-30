@@ -24,6 +24,24 @@ export function timeAgo(isoString) {
   return `преди ${days} дни`
 }
 
+export function formatDateDMY(date) {
+  const d = String(date.getDate()).padStart(2, "0")
+  const m = String(date.getMonth() + 1).padStart(2, "0")
+  const y = date.getFullYear()
+  return `${d}.${m}.${y}`
+}
+
+export function dateRange(startISO, endISO) {
+  const dates = []
+  const current = new Date(`${startISO}T00:00:00`)
+  const end = new Date(`${endISO}T00:00:00`)
+  while (current <= end) {
+    dates.push(new Date(current))
+    current.setDate(current.getDate() + 1)
+  }
+  return dates
+}
+
 const SESSION_GAP_MINUTES = 3
 
 export function withSessionBreaks(history) {
