@@ -12,6 +12,7 @@ const NAV_GROUPS = [
       { to: "/agent-queue", label: "Agent Queue", icon: "🧑‍💼" },
       { to: "/templates", label: "Templates", icon: "📄", adminOnly: true },
       { to: "/notify", label: "Изпрати Notify", icon: "📤", adminOnly: true },
+      { to: "/voice", label: "Voice", icon: "📞", adminOnly: true },
     ],
   },
   {

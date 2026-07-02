@@ -52,6 +52,7 @@ export const api = {
   notifyRaw: (message) => request("/notify/raw", { method: "POST", body: JSON.stringify(message) }),
   agentReply: (payload) => request("/agent-reply", { method: "POST", body: JSON.stringify(payload) }),
   stats: () => request("/api/stats"),
+  voiceCall: (payload) => request("/api/voice/call", { method: "POST", body: JSON.stringify(payload) }),
   listUsers: () => request("/api/users"),
   updateUserRole: (id, role) => request(`/api/users/${id}`, { method: "PUT", body: JSON.stringify({ role }) }),
   deleteUser: (id) => request(`/api/users/${id}`, { method: "DELETE" }),

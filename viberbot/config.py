@@ -21,6 +21,7 @@ CONVERSATION_TIMEOUT_MINUTES = 3
 
 VIBER_BOT_SENDER = "pa:6060271498432636599"
 VBM_SENDER = "TCP"
+VOICE_NUMBER_ID = os.environ.get("VOICE_NUMBER_ID", "5F5865622A8A2F6CEE951860D0432E98")
 
 SYSTEM_PROMPT = """Ти си помощник, специализиран в Infobip API и услуги (SMS, Viber, WhatsApp, Email, 2FA, Messages API).
 Отговаряй кратко и ясно на български език, до 3-4 изречения. Не използвай markdown форматиране (без **, #, -, списъци) - само обикновен текст.

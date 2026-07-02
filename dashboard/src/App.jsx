@@ -17,6 +17,7 @@ import Analytics from "./pages/Analytics"
 import Projects from "./pages/Projects"
 import ProjectDetail from "./pages/ProjectDetail"
 import Triage from "./pages/Triage"
+import Voice from "./pages/Voice"
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
               <Route element={<AdminRoute />}>
                 <Route path="/templates" element={<Templates />} />
                 <Route path="/notify" element={<Notify />} />
+                <Route path="/voice" element={<Voice />} />
                 <Route path="/users" element={<Users />} />
                 <Route path="/analytics" element={<Analytics />} />
               </Route>

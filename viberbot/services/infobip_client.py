@@ -57,6 +57,26 @@ def send_sms_notification(to, text):
     return response.status_code
 
 
+def send_voice_call(to, text, language="bg", speech_rate=0.9):
+    url = f"https://{config.INFOBIP_BASE_URL}/tts/3/single"
+    headers = {
+        "Authorization": f"App {config.INFOBIP_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "from": config.VOICE_NUMBER_ID,
+        "to": to,
+        "text": text,
+        "language": language,
+        "speechRate": speech_rate,
+    }
+    print(f"Sending voice call to: {to}")
+    response = requests.post(url, headers=headers, json=payload)
+    print(f"Voice status: {response.status_code}")
+    print(f"Voice response: {response.text}")
+    return response.status_code, response.text
+
+
 def send_raw_message(message):
     """Sends a single message object exactly as given to the Messages API,
     for channels/content schemas we don't have a dedicated helper for yet

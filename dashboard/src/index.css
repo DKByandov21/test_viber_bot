@@ -565,6 +565,18 @@ a {
   transition: opacity 0.15s ease;
 }
 
+.voice-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: #5b5be0;
+}
+
 button.danger {
   background: #fdecea;
   color: #c0392b;
