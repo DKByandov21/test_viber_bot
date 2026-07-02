@@ -20,6 +20,10 @@ def voice_call():
     language = data.get("language", "bg")
     speech_rate = float(data.get("speech_rate", 0.9))
     speech_rate = max(0.5, min(2.0, speech_rate))
+    gender = data.get("gender")
+    pause = data.get("pause")
+    if pause is not None:
+        pause = max(0, min(10, int(pause)))
 
-    status, response_text = send_voice_call(to, text, language, speech_rate)
+    status, response_text = send_voice_call(to, text, language, speech_rate, gender=gender, pause=pause)
     return jsonify({"status": "sent", "infobip_status": status, "infobip_response": response_text}), 200

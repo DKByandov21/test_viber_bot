@@ -57,7 +57,7 @@ def send_sms_notification(to, text):
     return response.status_code
 
 
-def send_voice_call(to, text, language="bg", speech_rate=0.9):
+def send_voice_call(to, text, language="bg", speech_rate=0.9, gender=None, pause=None):
     url = f"https://{config.INFOBIP_BASE_URL}/tts/3/single"
     headers = {
         "Authorization": f"App {config.INFOBIP_API_KEY}",
@@ -70,6 +70,10 @@ def send_voice_call(to, text, language="bg", speech_rate=0.9):
         "language": language,
         "speechRate": speech_rate,
     }
+    if gender in ("male", "female"):
+        payload["voice"] = {"gender": gender}
+    if pause is not None:
+        payload["pause"] = int(pause)
     print(f"Sending voice call to: {to}")
     response = requests.post(url, headers=headers, json=payload)
     print(f"Voice status: {response.status_code}")
