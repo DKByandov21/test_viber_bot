@@ -182,6 +182,47 @@ class Doc(db.Model):
         }
 
 
+class VoiceTemplate(db.Model):
+    __tablename__ = "voice_templates"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    language = db.Column(db.String(10), nullable=False, default="bg")
+    gender = db.Column(db.String(10), nullable=True)
+    speech_rate = db.Column(db.Float, nullable=False, default=0.9)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "text": self.text,
+            "language": self.language,
+            "gender": self.gender,
+            "speech_rate": self.speech_rate,
+        }
+
+
+class KnowledgeEntry(db.Model):
+    __tablename__ = "knowledge_entries"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "content": self.content,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
 class Template(db.Model):
     __tablename__ = "templates"
 

@@ -24,8 +24,18 @@ def find_relevant_chunks(query, top_n=3):
     if not query_words:
         return []
 
+    all_chunks = list(KNOWLEDGE_CHUNKS)
+
+    # Also search user-managed knowledge entries stored in the DB.
+    try:
+        from viberbot.db import KnowledgeEntry
+        for entry in KnowledgeEntry.query.all():
+            all_chunks.append(f"# {entry.title}\n{entry.content}")
+    except Exception:
+        pass
+
     scored = []
-    for chunk in KNOWLEDGE_CHUNKS:
+    for chunk in all_chunks:
         chunk_words = set(re.findall(r"\w+", chunk.lower()))
         overlap = len(query_words & chunk_words)
         if overlap > 0:

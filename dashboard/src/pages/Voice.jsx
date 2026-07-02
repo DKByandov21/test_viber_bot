@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { api } from "../api"
 
 const LANGUAGES = [
@@ -32,7 +32,46 @@ export default function Voice() {
   const [error, setError] = useState(null)
   const [sending, setSending] = useState(false)
   const [history, setHistory] = useState([])
+
+  // Templates
+  const [templates, setTemplates] = useState([])
+  const [saveName, setSaveName] = useState("")
+  const [saving, setSaving] = useState(false)
+  const [showSaveForm, setShowSaveForm] = useState(false)
+
   const textareaRef = useRef(null)
+
+  useEffect(() => {
+    api.listVoiceTemplates().then(setTemplates).catch(() => {})
+  }, [])
+
+  const loadTemplate = (t) => {
+    setText(t.text)
+    setLanguage(t.language)
+    setGender(t.gender || "")
+    setSpeechRate(t.speech_rate)
+  }
+
+  const handleSaveTemplate = async () => {
+    if (!saveName.trim() || !text.trim()) return
+    setSaving(true)
+    try {
+      const t = await api.createVoiceTemplate({ name: saveName.trim(), text, language, gender: gender || null, speech_rate: speechRate })
+      setTemplates((prev) => [t, ...prev])
+      setSaveName("")
+      setShowSaveForm(false)
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDeleteTemplate = async (id) => {
+    if (!confirm("Изтриване на шаблона?")) return
+    await api.deleteVoiceTemplate(id)
+    setTemplates((prev) => prev.filter((t) => t.id !== id))
+  }
 
   const insertSsml = (snippet) => {
     const el = textareaRef.current
@@ -40,23 +79,13 @@ export default function Voice() {
     const start = el.selectionStart
     const end = el.selectionEnd
     const selected = text.slice(start, end)
-
-    let toInsert
-    if (snippet.cursor) {
-      // replace | with selected text or leave cursor there
-      toInsert = snippet.insert.replace("|", selected || "")
-    } else {
-      toInsert = snippet.insert
-    }
-
+    const toInsert = snippet.cursor ? snippet.insert.replace("|", selected || "") : snippet.insert
     const newText = text.slice(0, start) + toInsert + text.slice(end)
     setText(newText)
-
-    // restore focus + set cursor after inserted text
     setTimeout(() => {
       el.focus()
-      const cursorPos = start + toInsert.length
-      el.setSelectionRange(cursorPos, cursorPos)
+      const pos = start + toInsert.length
+      el.setSelectionRange(pos, pos)
     }, 0)
   }
 
@@ -72,13 +101,7 @@ export default function Voice() {
       const res = await api.voiceCall(payload)
       setResult(res)
       setHistory((prev) => [
-        {
-          to,
-          text: text.slice(0, 60) + (text.length > 60 ? "..." : ""),
-          time: new Date().toLocaleTimeString("bg-BG"),
-          status: res.infobip_status,
-          gender: gender || "—",
-        },
+        { to, text: text.slice(0, 60) + (text.length > 60 ? "..." : ""), time: new Date().toLocaleTimeString("bg-BG"), status: res.infobip_status, gender: gender || "авт." },
         ...prev.slice(0, 9),
       ])
     } catch (err) {
@@ -96,10 +119,41 @@ export default function Voice() {
       </div>
 
       <div className="voice-layout">
-        <div className="settings-card" style={{ maxWidth: 520 }}>
+        <div className="settings-card" style={{ maxWidth: 540 }}>
+
+          {/* Template picker */}
+          {templates.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <label>Зареди шаблон</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                {templates.map((t) => (
+                  <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <button
+                      type="button"
+                      className="secondary"
+                      style={{ fontSize: 12, padding: "3px 10px" }}
+                      onClick={() => loadTemplate(t)}
+                      title={t.text.slice(0, 100)}
+                    >
+                      {t.name}
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary"
+                      style={{ fontSize: 11, padding: "2px 5px", color: "var(--danger)" }}
+                      onClick={() => handleDeleteTemplate(t.id)}
+                      title="Изтрий"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <h3>Ново обаждане</h3>
           <form onSubmit={handleSubmit} className="form">
-
             <label>До (телефон)</label>
             <input
               placeholder="359876888400"
@@ -109,7 +163,6 @@ export default function Voice() {
             />
 
             <label>Текст за изговаряне</label>
-            {/* SSML toolbar */}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 4 }}>
               {SSML_SNIPPETS.map((s) => (
                 <button
@@ -164,7 +217,7 @@ export default function Voice() {
               <span>0.5x (бавно)</span><span>1.0x (нормално)</span><span>2.0x (бързо)</span>
             </div>
 
-            <label>Пауза преди старт (сек: {pause})</label>
+            <label>Пауза преди старт ({pause}s)</label>
             <input
               type="range"
               min={0} max={10} step={1}
@@ -175,10 +228,35 @@ export default function Voice() {
               <span>0s</span><span>5s</span><span>10s</span>
             </div>
 
-            <button type="submit" disabled={sending} style={{ marginTop: 8 }}>
-              {sending ? "Обажда се..." : "📞 Обади се"}
-            </button>
+            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+              <button type="submit" disabled={sending} style={{ flex: 1 }}>
+                {sending ? "Обажда се..." : "📞 Обади се"}
+              </button>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => setShowSaveForm((s) => !s)}
+                title="Запази като шаблон"
+              >
+                💾 Запази
+              </button>
+            </div>
           </form>
+
+          {showSaveForm && (
+            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+              <input
+                placeholder="Име на шаблона..."
+                value={saveName}
+                onChange={(e) => setSaveName(e.target.value)}
+                style={{ flex: 1 }}
+                onKeyDown={(e) => e.key === "Enter" && handleSaveTemplate()}
+              />
+              <button onClick={handleSaveTemplate} disabled={saving || !saveName.trim()}>
+                {saving ? "..." : "OK"}
+              </button>
+            </div>
+          )}
 
           {error && <p className="error" style={{ marginTop: 12 }}>Грешка: {error}</p>}
           {result && (
@@ -190,7 +268,6 @@ export default function Voice() {
           <details style={{ marginTop: 16 }}>
             <summary className="muted" style={{ cursor: "pointer", fontSize: 13 }}>SSML — как да форматираш текста</summary>
             <div style={{ marginTop: 8, fontSize: 12, lineHeight: 1.7 }}>
-              <p>Можеш да поставяш SSML тагове директно в текста:</p>
               <ul style={{ paddingLeft: 16 }}>
                 <li><code>{'<break time="500ms"/>'}</code> — пауза 500мс</li>
                 <li><code>{'<emphasis level="strong">дума</emphasis>'}</code> — акцент</li>

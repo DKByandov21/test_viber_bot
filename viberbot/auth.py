@@ -17,6 +17,10 @@ def require_session(view):
     return wrapped
 
 
+def get_current_user():
+    return getattr(g, "user", None)
+
+
 def require_admin(view):
     @wraps(view)
     def wrapped(*args, **kwargs):

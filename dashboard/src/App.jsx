@@ -18,6 +18,7 @@ import Projects from "./pages/Projects"
 import ProjectDetail from "./pages/ProjectDetail"
 import Triage from "./pages/Triage"
 import Voice from "./pages/Voice"
+import Knowledge from "./pages/Knowledge"
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
                 <Route path="/templates" element={<Templates />} />
                 <Route path="/notify" element={<Notify />} />
                 <Route path="/voice" element={<Voice />} />
+                <Route path="/knowledge" element={<Knowledge />} />
                 <Route path="/users" element={<Users />} />
                 <Route path="/analytics" element={<Analytics />} />
               </Route>

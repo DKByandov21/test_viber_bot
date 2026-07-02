@@ -13,6 +13,7 @@ const NAV_GROUPS = [
       { to: "/templates", label: "Templates", icon: "📄", adminOnly: true },
       { to: "/notify", label: "Изпрати Notify", icon: "📤", adminOnly: true },
       { to: "/voice", label: "Voice", icon: "📞", adminOnly: true },
+      { to: "/knowledge", label: "Knowledge Base", icon: "🧠", adminOnly: true },
     ],
   },
   {

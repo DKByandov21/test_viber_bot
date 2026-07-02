@@ -53,9 +53,19 @@ export const api = {
   agentReply: (payload) => request("/agent-reply", { method: "POST", body: JSON.stringify(payload) }),
   stats: () => request("/api/stats"),
   voiceCall: (payload) => request("/api/voice/call", { method: "POST", body: JSON.stringify(payload) }),
+  listVoiceTemplates: () => request("/api/voice/templates"),
+  createVoiceTemplate: (payload) => request("/api/voice/templates", { method: "POST", body: JSON.stringify(payload) }),
+  deleteVoiceTemplate: (id) => request(`/api/voice/templates/${id}`, { method: "DELETE" }),
   listUsers: () => request("/api/users"),
   updateUserRole: (id, role) => request(`/api/users/${id}`, { method: "PUT", body: JSON.stringify({ role }) }),
   deleteUser: (id) => request(`/api/users/${id}`, { method: "DELETE" }),
+}
+
+export const knowledgeApi = {
+  list: () => request("/api/knowledge"),
+  create: (payload) => request("/api/knowledge", { method: "POST", body: JSON.stringify(payload) }),
+  update: (id, payload) => request(`/api/knowledge/${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+  remove: (id) => request(`/api/knowledge/${id}`, { method: "DELETE" }),
 }
 
 export const projectsApi = {
