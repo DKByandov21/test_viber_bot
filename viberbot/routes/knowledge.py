@@ -1,13 +1,13 @@
 from flask import Blueprint, jsonify, request
 
-from viberbot.auth import require_admin, require_session
+from viberbot.auth import get_current_user, require_admin, require_session
 from viberbot.db import KnowledgeEntry, db
 from viberbot.services.knowledge_base import KNOWLEDGE_CHUNKS
 
 bp = Blueprint("knowledge", __name__, url_prefix="/api/knowledge")
 
 
-@bp.route("", methods=["GET"])
+@bp.route("/", methods=["GET"], strict_slashes=False)
 @require_session
 @require_admin
 def list_entries():
@@ -18,7 +18,7 @@ def list_entries():
     })
 
 
-@bp.route("", methods=["POST"])
+@bp.route("/", methods=["POST"], strict_slashes=False)
 @require_session
 @require_admin
 def create_entry():
@@ -28,7 +28,6 @@ def create_entry():
     if not title or not content:
         return jsonify({"status": "error", "message": "'title' and 'content' are required"}), 400
 
-    from viberbot.auth import get_current_user
     user = get_current_user()
     entry = KnowledgeEntry(title=title, content=content, created_by=user.id if user else None)
     db.session.add(entry)
