@@ -21,7 +21,7 @@ def ask_groq(sender, user_message, channel="VIBER_BOT"):
         system_prompt = config.VBM_SYSTEM_PROMPT
         last_notification = state.get_last_notification(sender)
         if last_notification:
-            system_prompt += f"\n\nПоследно изпратено известие до този клиент: {last_notification}"
+            system_prompt += f"\n\n{last_notification}"
         user_content = user_message
     else:
         relevant_chunks = find_relevant_chunks(user_message)

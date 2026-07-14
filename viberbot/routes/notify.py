@@ -3,7 +3,11 @@ from flask import Blueprint, jsonify, request
 from viberbot.auth import require_admin, require_session
 from viberbot.services import state
 from viberbot.services.groq_client import remember_notification
-from viberbot.services.infobip_client import send_raw_message, send_template_notification
+from viberbot.services.infobip_client import (
+    get_rendered_template_text,
+    send_raw_message,
+    send_template_notification,
+)
 
 bp = Blueprint("notify", __name__)
 
@@ -38,13 +42,9 @@ def notify():
         to=to, template_name=template_name, language=language, placeholders=placeholders
     )
     # Without a stored summary the VBM AI has no idea what notification the
-    # customer is replying to - fall back to template name + placeholder values.
+    # customer is replying to - reconstruct the actual message text.
     if not context_summary:
-        details = ", ".join(f"{k}: {v}" for k, v in (placeholders or {}).items() if k != "type")
-        context_summary = f"Изпратено известие по template '{template_name}'"
-        if details:
-            context_summary += f" с данни: {details}"
-        context_summary += "."
+        context_summary = _build_notification_context(template_name, language, placeholders)
     remember_notification(to, context_summary)
 
     return jsonify({"status": "sent", "infobip_status": status, "infobip_response": response_text}), 200
@@ -120,7 +120,18 @@ def _summarize_raw_message(message):
     if not template_name:
         return None
     body = (message.get("content") or {}).get("body") or {}
-    details = ", ".join(f"{k}: {v}" for k, v in body.items() if k != "type")
+    placeholders = {k: v for k, v in body.items() if k != "type"}
+    return _build_notification_context(template_name, template.get("language"), placeholders)
+
+
+def _build_notification_context(template_name, language, placeholders):
+    """The AI context is the exact message text the customer received - that
+    lets it explain the notification in plain language. Placeholder key/value
+    pairs are only a fallback when the template body can't be fetched."""
+    rendered = get_rendered_template_text(template_name, language, placeholders)
+    if rendered:
+        return f'Клиентът получи следното съобщение: "{rendered}"'
+    details = ", ".join(f"{k}: {v}" for k, v in (placeholders or {}).items() if k != "type")
     summary = f"Изпратено известие по template '{template_name}'"
     if details:
         summary += f" с данни: {details}"

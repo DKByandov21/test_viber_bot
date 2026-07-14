@@ -98,6 +98,44 @@ def send_raw_message(message):
     return response.status_code, response.text
 
 
+def get_rendered_template_text(template_name, language=None, placeholders=None):
+    """Fetches the registered VBM template's body text from Infobip and fills in
+    the placeholders - i.e. reconstructs the exact message the customer received.
+    Returns None if the template can't be found (caller should fall back)."""
+    url = f"https://{config.INFOBIP_BASE_URL}/viber/1/senders/{config.VBM_SENDER}/templates"
+    headers = {
+        "Authorization": f"App {config.INFOBIP_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        if not response.ok:
+            print(f"Template list fetch failed: {response.status_code}")
+            return None
+        templates = response.json().get("templates", [])
+    except Exception as exc:
+        print(f"Template list fetch error: {exc}")
+        return None
+
+    for template in templates:
+        if template.get("templateId") != template_name:
+            continue
+        bodies = template.get("body") or []
+        text = None
+        for body in bodies:
+            if language is None or body.get("language") == language:
+                text = body.get("template")
+                break
+        if text is None and bodies:
+            text = bodies[0].get("template")
+        if not text:
+            return None
+        for key, value in (placeholders or {}).items():
+            text = text.replace("{{%s}}" % key, str(value))
+        return text
+    return None
+
+
 def send_template_notification(to, template_name, language, placeholders=None):
     url = f"https://{config.INFOBIP_BASE_URL}/messages-api/1/messages"
     headers = {
