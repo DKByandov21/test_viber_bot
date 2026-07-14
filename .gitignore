@@ -1,5 +1,14 @@
+# Secrets - NEVER commit
 .env
+
+# Python
 __pycache__/
 *.pyc
+.pytest_cache/
+instance/
+
+# Tooling
 .claude/
+
+# Frontend
 dashboard/node_modules/
