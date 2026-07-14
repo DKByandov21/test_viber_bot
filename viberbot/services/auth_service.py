@@ -1,5 +1,6 @@
 import random
 from datetime import datetime, timedelta
+from typing import Literal
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -25,30 +26,71 @@ def register(email, password, phone):
     return user
 
 
-def start_login(email, password):
+def start_login(email, password, channel: Literal["viber", "sms", "voice", "email"] = "viber"):
     email = email.strip().lower()
     user = User.query.filter_by(email=email).first()
     if not user or not check_password_hash(user.password_hash, password):
         raise AuthError("Грешен имейл или парола")
 
-    code = f"{random.randint(0, 999999):06d}"
     otp = OtpCode(
         user_id=user.id,
-        code=code,
+        channel=channel,
         expires_at=datetime.utcnow() + timedelta(minutes=OTP_TTL_MINUTES),
     )
-    db.session.add(otp)
-    db.session.commit()
 
-    send_template_notification(user.phone, template_name="5fafdcbe-8f81-4116-a14f-fabedb38b194", language="en", placeholders={"pin": code})
+    if channel == "viber":
+        code = f"{random.randint(0, 999999):06d}"
+        otp.code = code
+        db.session.add(otp)
+        db.session.commit()
+        send_template_notification(
+            user.phone,
+            template_name="5fafdcbe-8f81-4116-a14f-fabedb38b194",
+            language="en",
+            placeholders={"pin": code},
+        )
+    else:
+        from viberbot.services.infobip_2fa_client import InfobipOtpError, send_otp
+
+        destination = user.email if channel == "email" else user.phone
+        try:
+            pin_id = send_otp(channel, destination)
+        except InfobipOtpError as e:
+            raise AuthError(f"Неуспешно изпращане на код: {e}")
+        otp.pin_id = pin_id
+        db.session.add(otp)
+        db.session.commit()
 
     return otp.id
 
 
 def verify_otp(otp_id, code):
     otp = OtpCode.query.get(otp_id)
-    if not otp or otp.used or otp.expires_at < datetime.utcnow() or otp.code != code:
-        raise AuthError("Невалиден или изтекъл код")
+    if not otp or otp.used:
+        raise AuthError("Невалиден или използван код")
+    if otp.expires_at < datetime.utcnow():
+        raise AuthError("Изтекъл код")
+
+    if otp.channel == "viber":
+        if otp.code != code:
+            raise AuthError("Невалиден код")
+    else:
+        from viberbot.services.infobip_2fa_client import (
+            InfobipAttemptsExceeded,
+            InfobipOtpError,
+            InfobipPinExpired,
+            verify_otp as infobip_verify,
+        )
+        try:
+            verified = infobip_verify(otp.pin_id, code)
+        except InfobipPinExpired:
+            raise AuthError("Изтекъл код")
+        except InfobipAttemptsExceeded:
+            raise AuthError("Превишен брой опити")
+        except InfobipOtpError as e:
+            raise AuthError(f"Грешка при верификация: {e}")
+        if not verified:
+            raise AuthError("Невалиден код")
 
     otp.used = True
     session = Session(

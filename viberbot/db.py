@@ -24,9 +24,11 @@ class OtpCode(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    code = db.Column(db.String(6), nullable=False)
+    code = db.Column(db.String(6), nullable=False, default="")
     expires_at = db.Column(db.DateTime, nullable=False)
     used = db.Column(db.Boolean, nullable=False, default=False)
+    channel = db.Column(db.String(16), nullable=False, default="viber")
+    pin_id = db.Column(db.String(128), nullable=True)
 
 
 class Session(db.Model):
@@ -309,6 +311,12 @@ def init_db(app):
                 ))
                 conn.execute(db.text(
                     "UPDATE conversations SET last_customer_at = updated_at WHERE last_customer_at IS NULL"
+                ))
+                conn.execute(db.text(
+                    "ALTER TABLE otp_codes ADD COLUMN IF NOT EXISTS channel VARCHAR(16) NOT NULL DEFAULT 'viber'"
+                ))
+                conn.execute(db.text(
+                    "ALTER TABLE otp_codes ADD COLUMN IF NOT EXISTS pin_id VARCHAR(128)"
                 ))
                 conn.commit()
             seed_default_templates()

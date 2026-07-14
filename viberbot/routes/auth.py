@@ -28,8 +28,12 @@ def login_route():
     if not email or not password:
         return jsonify({"status": "error", "message": "'email' and 'password' are required"}), 400
 
+    channel = data.get("channel", "viber")
+    if channel not in ("viber", "sms", "voice", "email"):
+        return jsonify({"status": "error", "message": "Невалиден канал. Позволени: viber, sms, voice, email"}), 400
+
     try:
-        otp_id = start_login(email, password)
+        otp_id = start_login(email, password, channel=channel)
     except AuthError as e:
         return jsonify({"status": "error", "message": str(e)}), 401
 

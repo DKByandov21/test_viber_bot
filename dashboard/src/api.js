@@ -50,6 +50,7 @@ export const api = {
   deleteTemplate: (key) => request(`/api/templates/${encodeURIComponent(key)}`, { method: "DELETE" }),
   notify: (payload) => request("/notify", { method: "POST", body: JSON.stringify(payload) }),
   notifyRaw: (message) => request("/notify/raw", { method: "POST", body: JSON.stringify(message) }),
+  notifyBulk: (payload) => request("/notify/bulk", { method: "POST", body: JSON.stringify(payload) }),
   agentReply: (payload) => request("/agent-reply", { method: "POST", body: JSON.stringify(payload) }),
   stats: () => request("/api/stats"),
   voiceCall: (payload) => request("/api/voice/call", { method: "POST", body: JSON.stringify(payload) }),

@@ -23,6 +23,12 @@ VIBER_BOT_SENDER = "pa:6060271498432636599"
 VBM_SENDER = "TCP"
 VOICE_NUMBER_ID = os.environ.get("VOICE_NUMBER_ID", "5F5865622A8A2F6CEE951860D0432E98")
 
+INFOBIP_2FA_APP_ID = os.environ.get("INFOBIP_2FA_APP_ID")
+INFOBIP_2FA_SMS_MSG_ID = os.environ.get("INFOBIP_2FA_SMS_MSG_ID")
+INFOBIP_2FA_VOICE_MSG_ID = os.environ.get("INFOBIP_2FA_VOICE_MSG_ID")
+INFOBIP_2FA_EMAIL_MSG_ID = os.environ.get("INFOBIP_2FA_EMAIL_MSG_ID")
+INFOBIP_2FA_FROM = os.environ.get("INFOBIP_2FA_FROM", "InfoSMS")
+
 SYSTEM_PROMPT = """Ти си помощник, специализиран в Infobip API и услуги (SMS, Viber, WhatsApp, Email, 2FA, Messages API).
 Отговаряй кратко и ясно на български език, до 3-4 изречения. Не използвай markdown форматиране (без **, #, -, списъци) - само обикновен текст.
 Ако ти е предоставен контекст от документация по-долу, базирай отговора си на него. Ако контекстът не съдържа отговора, кажи че не си сигурен."""
