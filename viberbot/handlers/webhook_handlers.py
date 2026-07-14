@@ -51,7 +51,9 @@ def handle_button_reply(sender, channel, payload):
             config.AGENT_NOTIFY_PHONE,
             f"Клиент {sender} иска да говори с агент ({channel_label}). Отговори от dashboard-а.",
         )
-        reply_on_same_channel(channel, sender, "Свързваме те с агент. Очаквай отговор скоро!")
+        notice = "Свързваме те с агент. Очаквай отговор скоро!"
+        reply_on_same_channel(channel, sender, notice)
+        state.append_assistant_note(sender, notice)
     elif payload == "END_CHAT":
         state.clear_conversation(sender)
         reply_on_same_channel(channel, sender, "Разговорът приключи. Пиши ми пак, когато имаш въпрос!")
@@ -75,14 +77,17 @@ def handle_text_message(sender, channel, text):
         return
 
     # Keyword-based agent handoff — primary path for VBM (no interactive buttons),
-    # but works as a fallback on any channel.
+    # but works as a fallback on any channel. The trigger message itself must land
+    # in history too, so the agent sees what the customer actually wrote.
     if _keyword_match(text, _AGENT_KEYWORDS):
+        state.append_user_message(sender, text)
         handle_button_reply(sender, channel, "CONTACT_AGENT")
         return
 
     if _keyword_match(text, _END_CHAT_KEYWORDS):
+        state.append_user_message(sender, text)
         handle_button_reply(sender, channel, "END_CHAT")
         return
 
-    ai_reply = ask_groq(sender, text)
+    ai_reply = ask_groq(sender, text, channel)
     reply_on_same_channel(channel, sender, ai_reply)

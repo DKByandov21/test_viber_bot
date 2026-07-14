@@ -14,6 +14,7 @@ def _make_patches(agent_mode=False, channel="VIBER_BM"):
         "viberbot.handlers.webhook_handlers.state.set_agent_mode": MagicMock(),
         "viberbot.handlers.webhook_handlers.state.clear_conversation": MagicMock(),
         "viberbot.handlers.webhook_handlers.state.append_user_message": MagicMock(),
+        "viberbot.handlers.webhook_handlers.state.append_assistant_note": MagicMock(),
         "viberbot.handlers.webhook_handlers.state.get_channel": MagicMock(return_value=channel),
         "viberbot.handlers.webhook_handlers.send_sms_notification": MagicMock(),
         "viberbot.handlers.webhook_handlers.reply_on_same_channel": MagicMock(),
@@ -49,6 +50,7 @@ class TestVbmAgentKeywords:
             set_agent_mode=patches["viberbot.handlers.webhook_handlers.state.set_agent_mode"],
             clear_conversation=patches["viberbot.handlers.webhook_handlers.state.clear_conversation"],
             append_user_message=patches["viberbot.handlers.webhook_handlers.state.append_user_message"],
+            append_assistant_note=patches["viberbot.handlers.webhook_handlers.state.append_assistant_note"],
         ):
             handle_text_message("test_sender", "VIBER_BM", text)
 
@@ -56,6 +58,8 @@ class TestVbmAgentKeywords:
         patches["viberbot.handlers.webhook_handlers.reply_on_same_channel"].assert_called_once()
         patches["viberbot.handlers.webhook_handlers.send_sms_notification"].assert_called_once()
         patches["viberbot.handlers.webhook_handlers.ask_groq"].assert_not_called()
+        # The trigger message itself must be logged so the agent sees it.
+        patches["viberbot.handlers.webhook_handlers.state.append_user_message"].assert_called_once_with("test_sender", text)
 
     @pytest.mark.parametrize("text", ["край", "стоп", "довиждане", "end", "stop"])
     def test_end_chat_keyword_clears_conversation(self, text):
@@ -73,6 +77,7 @@ class TestVbmAgentKeywords:
             set_agent_mode=patches["viberbot.handlers.webhook_handlers.state.set_agent_mode"],
             clear_conversation=patches["viberbot.handlers.webhook_handlers.state.clear_conversation"],
             append_user_message=patches["viberbot.handlers.webhook_handlers.state.append_user_message"],
+            append_assistant_note=patches["viberbot.handlers.webhook_handlers.state.append_assistant_note"],
         ):
             handle_text_message("test_sender", "VIBER_BM", text)
 
@@ -94,6 +99,7 @@ class TestVbmAgentKeywords:
             set_agent_mode=patches["viberbot.handlers.webhook_handlers.state.set_agent_mode"],
             clear_conversation=patches["viberbot.handlers.webhook_handlers.state.clear_conversation"],
             append_user_message=patches["viberbot.handlers.webhook_handlers.state.append_user_message"],
+            append_assistant_note=patches["viberbot.handlers.webhook_handlers.state.append_assistant_note"],
         ):
             handle_text_message("test_sender", "VIBER_BM", "Какво е Infobip?")
 
@@ -115,6 +121,7 @@ class TestVbmAgentKeywords:
             set_agent_mode=patches["viberbot.handlers.webhook_handlers.state.set_agent_mode"],
             clear_conversation=patches["viberbot.handlers.webhook_handlers.state.clear_conversation"],
             append_user_message=patches["viberbot.handlers.webhook_handlers.state.append_user_message"],
+            append_assistant_note=patches["viberbot.handlers.webhook_handlers.state.append_assistant_note"],
         ):
             handle_text_message("test_sender", "VIBER_BM", "Здравейте, кога ще отговорите?")
 
@@ -144,6 +151,7 @@ class TestChannelLabelInSms:
             set_agent_mode=patches["viberbot.handlers.webhook_handlers.state.set_agent_mode"],
             clear_conversation=patches["viberbot.handlers.webhook_handlers.state.clear_conversation"],
             append_user_message=patches["viberbot.handlers.webhook_handlers.state.append_user_message"],
+            append_assistant_note=patches["viberbot.handlers.webhook_handlers.state.append_assistant_note"],
         ):
             handle_button_reply("sender_x", channel, "CONTACT_AGENT")
         return mock_sms

@@ -5,19 +5,28 @@ from viberbot.services import state
 from viberbot.services.knowledge_base import find_relevant_chunks
 
 
-def ask_groq(sender, user_message):
+def ask_groq(sender, user_message, channel="VIBER_BOT"):
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {config.GROQ_API_KEY}",
         "Content-Type": "application/json"
     }
 
-    relevant_chunks = find_relevant_chunks(user_message)
-    if relevant_chunks:
-        context = "\n\n---\n\n".join(relevant_chunks)
-        user_content = f"Контекст от Infobip документация:\n{context}\n\nВъпрос: {user_message}"
-    else:
+    # VBM conversations start from a template notification we sent - the AI
+    # should answer about that notification (already in history via
+    # remember_notification), not consult the Infobip docs knowledge base.
+    if channel == "VIBER_BM":
+        relevant_chunks = []
+        system_prompt = config.VBM_SYSTEM_PROMPT
         user_content = user_message
+    else:
+        relevant_chunks = find_relevant_chunks(user_message)
+        system_prompt = config.SYSTEM_PROMPT
+        if relevant_chunks:
+            context = "\n\n---\n\n".join(relevant_chunks)
+            user_content = f"Контекст от Infobip документация:\n{context}\n\nВъпрос: {user_message}"
+        else:
+            user_content = user_message
 
     history = state.get_history(sender)
     # Groq's API only accepts system/user/assistant roles - "agent" (a human
@@ -26,7 +35,7 @@ def ask_groq(sender, user_message):
         {"role": "assistant" if m["role"] == "agent" else m["role"], "content": m["content"]}
         for m in history
     ]
-    messages = [{"role": "system", "content": config.SYSTEM_PROMPT}] + clean_history + [{"role": "user", "content": user_content}]
+    messages = [{"role": "system", "content": system_prompt}] + clean_history + [{"role": "user", "content": user_content}]
 
     payload = {
         "model": config.GROQ_MODEL,

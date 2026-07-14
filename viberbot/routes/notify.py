@@ -37,6 +37,14 @@ def notify():
     status, response_text = send_template_notification(
         to=to, template_name=template_name, language=language, placeholders=placeholders
     )
+    # Without a stored summary the VBM AI has no idea what notification the
+    # customer is replying to - fall back to template name + placeholder values.
+    if not context_summary:
+        details = ", ".join(f"{k}: {v}" for k, v in (placeholders or {}).items() if k != "type")
+        context_summary = f"Изпратено известие по template '{template_name}'"
+        if details:
+            context_summary += f" с данни: {details}"
+        context_summary += "."
     remember_notification(to, context_summary)
 
     return jsonify({"status": "sent", "infobip_status": status, "infobip_response": response_text}), 200
