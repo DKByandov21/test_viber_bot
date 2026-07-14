@@ -13,11 +13,15 @@ def ask_groq(sender, user_message, channel="VIBER_BOT"):
     }
 
     # VBM conversations start from a template notification we sent - the AI
-    # should answer about that notification (already in history via
-    # remember_notification), not consult the Infobip docs knowledge base.
+    # should answer about that notification, not consult the Infobip docs
+    # knowledge base. The notification context is stored on the conversation
+    # row (not in history) so it survives session archiving.
     if channel == "VIBER_BM":
         relevant_chunks = []
         system_prompt = config.VBM_SYSTEM_PROMPT
+        last_notification = state.get_last_notification(sender)
+        if last_notification:
+            system_prompt += f"\n\nПоследно изпратено известие до този клиент: {last_notification}"
         user_content = user_message
     else:
         relevant_chunks = find_relevant_chunks(user_message)
@@ -55,4 +59,7 @@ def ask_groq(sender, user_message, channel="VIBER_BOT"):
 
 def remember_notification(to, context_summary):
     if context_summary:
+        # Durable copy for the AI (survives session resets) + a history note
+        # so the agent sees what was sent when browsing the conversation.
+        state.set_last_notification(to, context_summary)
         state.append_assistant_note(to, context_summary)

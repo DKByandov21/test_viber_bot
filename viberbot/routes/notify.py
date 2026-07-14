@@ -100,4 +100,28 @@ def notify_raw():
         return jsonify({"status": "error", "message": "Request body must be a JSON message object"}), 400
 
     status, response_text = send_raw_message(message)
+
+    # Raw sends are how the dashboard Notify page delivers templates - store a
+    # context summary per recipient so the VBM AI can answer about the message.
+    if status == 200:
+        summary = _summarize_raw_message(message)
+        if summary:
+            for dest in message.get("destinations", []):
+                to = dest.get("to")
+                if to:
+                    remember_notification(str(to), summary)
+
     return jsonify({"status": "sent", "infobip_status": status, "infobip_response": response_text}), 200
+
+
+def _summarize_raw_message(message):
+    template = message.get("template") or {}
+    template_name = template.get("templateName")
+    if not template_name:
+        return None
+    body = (message.get("content") or {}).get("body") or {}
+    details = ", ".join(f"{k}: {v}" for k, v in body.items() if k != "type")
+    summary = f"Изпратено известие по template '{template_name}'"
+    if details:
+        summary += f" с данни: {details}"
+    return summary + "."

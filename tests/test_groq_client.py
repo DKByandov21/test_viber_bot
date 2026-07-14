@@ -13,7 +13,7 @@ def _groq_response(reply="AI отговор"):
     return m
 
 
-def _run_ask_groq(channel, history=None):
+def _run_ask_groq(channel, history=None, last_notification=None):
     from viberbot.services.groq_client import ask_groq
 
     with patch("viberbot.services.groq_client.find_relevant_chunks") as mock_chunks, \
@@ -21,6 +21,7 @@ def _run_ask_groq(channel, history=None):
          patch("viberbot.services.groq_client.requests.post") as mock_post:
         mock_chunks.return_value = ["chunk от документацията"]
         mock_state.get_history.return_value = history or []
+        mock_state.get_last_notification.return_value = last_notification
         mock_post.return_value = _groq_response()
 
         reply = ask_groq("sender_x", "какво е това", channel)
@@ -49,6 +50,17 @@ class TestVbmPath:
         history = [{"role": "assistant", "content": "Изпратено известие: пратка 12 очаква получаване."}]
         _, _, payload = _run_ask_groq("VIBER_BM", history=history)
         assert any("пратка 12" in m["content"] for m in payload["messages"])
+
+    def test_vbm_last_notification_injected_in_system_prompt(self):
+        # The durable notification context must reach the AI even with empty
+        # history (i.e. after a session reset archived the conversation).
+        _, _, payload = _run_ask_groq(
+            "VIBER_BM",
+            last_notification="Изпратено известие по template 'express_one' с данни: пратка 12.",
+        )
+        system_msg = payload["messages"][0]["content"]
+        assert "express_one" in system_msg
+        assert "пратка 12" in system_msg
 
 
 class TestViberBotPath:

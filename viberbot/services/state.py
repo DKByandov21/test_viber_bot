@@ -98,6 +98,17 @@ def append_agent_message(sender, content):
     db.session.commit()
 
 
+def set_last_notification(sender, summary):
+    convo = _get_or_create(sender)
+    convo.last_notification = summary
+    db.session.commit()
+
+
+def get_last_notification(sender):
+    convo = Conversation.query.filter_by(sender=sender).first()
+    return convo.last_notification if convo else None
+
+
 def is_agent_mode(sender):
     convo = Conversation.query.filter_by(sender=sender).first()
     return bool(convo and convo.agent_mode)

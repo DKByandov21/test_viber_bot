@@ -49,6 +49,10 @@ class Conversation(db.Model):
     agent_mode = db.Column(db.Boolean, nullable=False, default=False)
     channel = db.Column(db.String(32), nullable=False, default="VIBER_BOT")
     last_customer_at = db.Column(db.DateTime, nullable=True)
+    # Context of the most recent template notification we sent - lives outside
+    # history so it survives session archiving (the VBM AI needs it to answer
+    # "what is this message?" even if the customer replies hours later).
+    last_notification = db.Column(db.Text, nullable=True)
     updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
 
     def to_dict(self):
@@ -317,6 +321,9 @@ def init_db(app):
                 ))
                 conn.execute(db.text(
                     "ALTER TABLE otp_codes ADD COLUMN IF NOT EXISTS pin_id VARCHAR(128)"
+                ))
+                conn.execute(db.text(
+                    "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS last_notification TEXT"
                 ))
                 conn.commit()
             seed_default_templates()
