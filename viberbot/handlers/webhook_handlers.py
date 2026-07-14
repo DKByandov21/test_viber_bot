@@ -6,6 +6,11 @@ from viberbot.services.infobip_client import reply_on_same_channel, send_sms_not
 
 KNOWN_BUTTON_PAYLOADS = {"CONTACT_AGENT", "END_CHAT", "ANOTHER_QUESTION"}
 
+# Keyword triggers for channels that don't support interactive buttons (e.g. VBM).
+# Matched against the full lowercased, stripped message text.
+_AGENT_KEYWORDS = {"агент", "оператор", "служител", "жив човек", "iskam agent", "agent"}
+_END_CHAT_KEYWORDS = {"край", "стоп", "довиждане", "end", "stop"}
+
 
 def parse_inbound_message(msg):
     """Normalizes the two inbound shapes Infobip sends us:
@@ -41,7 +46,11 @@ def handle_button_reply(sender, channel, payload):
 
     if payload == "CONTACT_AGENT":
         state.set_agent_mode(sender, True)
-        send_sms_notification(config.AGENT_NOTIFY_PHONE, f"Клиент {sender} иска да говори с агент във Viber бота.")
+        channel_label = "VBM" if channel == "VIBER_BM" else "Viber Bot"
+        send_sms_notification(
+            config.AGENT_NOTIFY_PHONE,
+            f"Клиент {sender} иска да говори с агент ({channel_label}). Отговори от dashboard-а.",
+        )
         reply_on_same_channel(channel, sender, "Свързваме те с агент. Очаквай отговор скоро!")
     elif payload == "END_CHAT":
         state.clear_conversation(sender)
@@ -50,15 +59,29 @@ def handle_button_reply(sender, channel, payload):
         reply_on_same_channel(channel, sender, "Питай ме нещо за Infobip!")
 
 
+def _keyword_match(text, keywords):
+    normalized = text.lower().strip()
+    return any(kw in normalized for kw in keywords)
+
+
 def handle_text_message(sender, channel, text):
     state.set_channel(sender, channel)
     state.ensure_fresh_session(sender)
 
     if state.is_agent_mode(sender):
         # Customer already got the "we're connecting you" notice when they
-        # hit Contact Agent - just log what they say so the agent sees it,
-        # no need to repeat the notice on every message.
+        # hit Contact Agent - just log what they say so the agent sees it.
         state.append_user_message(sender, text)
+        return
+
+    # Keyword-based agent handoff — primary path for VBM (no interactive buttons),
+    # but works as a fallback on any channel.
+    if _keyword_match(text, _AGENT_KEYWORDS):
+        handle_button_reply(sender, channel, "CONTACT_AGENT")
+        return
+
+    if _keyword_match(text, _END_CHAT_KEYWORDS):
+        handle_button_reply(sender, channel, "END_CHAT")
         return
 
     ai_reply = ask_groq(sender, text)
