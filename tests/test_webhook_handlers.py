@@ -105,6 +105,56 @@ class TestVbmAgentKeywords:
 
         patches["viberbot.handlers.webhook_handlers.ask_groq"].assert_called_once()
         patches["viberbot.handlers.webhook_handlers.state.set_agent_mode"].assert_not_called()
+        # VBM replies always carry the agent hint (no buttons on that channel).
+        sent_text = patches["viberbot.handlers.webhook_handlers.reply_on_same_channel"].call_args[0][2]
+        assert "искам агент" in sent_text
+
+    def test_bot_reply_has_no_agent_hint(self):
+        from viberbot.handlers.webhook_handlers import handle_text_message
+
+        patches = _make_patches()
+        with patch.multiple("viberbot.handlers.webhook_handlers", **{
+            k.split(".")[-1]: v for k, v in patches.items()
+            if "state." not in k
+        }), patch.multiple(
+            "viberbot.handlers.webhook_handlers.state",
+            set_channel=patches["viberbot.handlers.webhook_handlers.state.set_channel"],
+            ensure_fresh_session=patches["viberbot.handlers.webhook_handlers.state.ensure_fresh_session"],
+            is_agent_mode=patches["viberbot.handlers.webhook_handlers.state.is_agent_mode"],
+            set_agent_mode=patches["viberbot.handlers.webhook_handlers.state.set_agent_mode"],
+            clear_conversation=patches["viberbot.handlers.webhook_handlers.state.clear_conversation"],
+            append_user_message=patches["viberbot.handlers.webhook_handlers.state.append_user_message"],
+            append_assistant_note=patches["viberbot.handlers.webhook_handlers.state.append_assistant_note"],
+        ):
+            handle_text_message("test_sender", "VIBER_BOT", "Какво е Infobip?")
+
+        sent_text = patches["viberbot.handlers.webhook_handlers.reply_on_same_channel"].call_args[0][2]
+        assert "искам агент" not in sent_text
+
+    def test_vbm_reply_with_hint_respects_text_limit(self):
+        from viberbot import config
+        from viberbot.handlers.webhook_handlers import handle_text_message
+
+        patches = _make_patches()
+        patches["viberbot.handlers.webhook_handlers.ask_groq"] = MagicMock(return_value="х" * config.VIBER_TEXT_LIMIT)
+        with patch.multiple("viberbot.handlers.webhook_handlers", **{
+            k.split(".")[-1]: v for k, v in patches.items()
+            if "state." not in k
+        }), patch.multiple(
+            "viberbot.handlers.webhook_handlers.state",
+            set_channel=patches["viberbot.handlers.webhook_handlers.state.set_channel"],
+            ensure_fresh_session=patches["viberbot.handlers.webhook_handlers.state.ensure_fresh_session"],
+            is_agent_mode=patches["viberbot.handlers.webhook_handlers.state.is_agent_mode"],
+            set_agent_mode=patches["viberbot.handlers.webhook_handlers.state.set_agent_mode"],
+            clear_conversation=patches["viberbot.handlers.webhook_handlers.state.clear_conversation"],
+            append_user_message=patches["viberbot.handlers.webhook_handlers.state.append_user_message"],
+            append_assistant_note=patches["viberbot.handlers.webhook_handlers.state.append_assistant_note"],
+        ):
+            handle_text_message("test_sender", "VIBER_BM", "Кога пристига пратката?")
+
+        sent_text = patches["viberbot.handlers.webhook_handlers.reply_on_same_channel"].call_args[0][2]
+        assert len(sent_text) <= config.VIBER_TEXT_LIMIT
+        assert sent_text.endswith(config.VBM_AGENT_HINT)
 
     def test_message_in_agent_mode_logs_without_ai(self):
         from viberbot.handlers.webhook_handlers import handle_text_message

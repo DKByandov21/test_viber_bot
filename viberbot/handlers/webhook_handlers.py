@@ -90,4 +90,9 @@ def handle_text_message(sender, channel, text):
         return
 
     ai_reply = ask_groq(sender, text, channel)
+    if channel == "VIBER_BM":
+        # VBM has no quick-reply buttons, so every reply carries the agent hint.
+        # Trim the AI part if needed so the combined text stays within the limit.
+        max_reply = config.VIBER_TEXT_LIMIT - len(config.VBM_AGENT_HINT) - 2
+        ai_reply = f"{ai_reply[:max_reply]}\n\n{config.VBM_AGENT_HINT}"
     reply_on_same_channel(channel, sender, ai_reply)
